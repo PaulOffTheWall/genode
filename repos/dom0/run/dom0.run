@@ -1,0 +1,36 @@
+#
+# Build
+#
+
+build { core init dom0 }
+
+create_boot_directory
+
+#
+# Generate config
+#
+
+install_config {
+<config>
+    <parent-provides>
+        <service name="LOG"/>
+        <service name="RM"/>
+    </parent-provides>
+    <default-route>
+        <any-service> <parent/> <any-child/> </any-service>
+    </default-route>
+    <start name="dom0">
+        <resource name="RAM" quantum="1M"/>
+        <provides><service name="dom0"/></provides>
+    </start>
+</config>}
+
+#
+# Boot image
+#
+
+build_boot_image { core init dom0 }
+
+append qemu_args " -nographic " 
+
+run_genode_until forever
