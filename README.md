@@ -24,6 +24,10 @@ For running Genode in QEMU:
 
 `sudo apt-get install libxml2-utils syslinux qemu`
 
+For some additional ports you may need:
+
+`sudo apt-get install xsltproc yasm iasl lynx`
+
 ### Folder structure
 Custom repos:
 
