@@ -55,6 +55,10 @@ set config {
 	<start name="dom0">
 		<resource name="RAM" quantum="4M"/>
 		<provides><service name="dom0"/></provides>
+		<config>
+			<listen-address>192.168.0.14</listen-address>
+			<port>3001</port>
+		</config>
 	</start>}
 
 append_if [have_spec gpio] config {
@@ -71,7 +75,7 @@ append_if $use_usb_driver config {
 			<service name="Nic"/>
 		</provides>
 		<config ehci="yes">
-			<nic mac="02:00:00:00:01:01" />
+			<nic mac="02:00:00:00:01:01"/>
 		</config>
 	</start>}
 
@@ -98,7 +102,9 @@ set boot_modules {
 	timer
 	ld.lib.so
 	libc.lib.so
+	stdcxx.lib.so
 	lwip.lib.so
+	libm.lib.so
 }
 
 # platform-specific modules

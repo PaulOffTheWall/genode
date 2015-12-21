@@ -7,7 +7,7 @@ http://genode.org/documentation/developer-resources/getting_started
 
 The toolchain installs executables to `/usr/local/genode-gcc` as part of the `tool_chain` script. Everything else stays within the repository.
 
-Possible targets are: `all` `toolchain` `foc` `genode_build_dir` `genode`
+Useful targets are: `all` `toolchain` `ports` `genode_build_dir` `genode` 'vde'
 
 Inter-target dependencies are not resolved automatically (yet).
 
@@ -43,3 +43,6 @@ The provided Makefile creates the following directories:
 | `build/toolchain-TARGET/`   | Genode toolchain          |
 | `build/genode-TARGET/`      | Genode build dir          |
 | `contrib/`                  | external Genode libraries |
+
+### VDE
+The VDE network can be set up using `make vde`. VDE functionality requires a manual build of QEMU with VDE support enabled. Reset the VDE network using `make vde-stop`.
