@@ -7,7 +7,7 @@ http://genode.org/documentation/developer-resources/getting_started
 
 The toolchain installs executables to `/usr/local/genode-gcc` as part of the `tool_chain` script. Everything else stays within the repository.
 
-Useful targets are: `all` `toolchain` `ports` `genode_build_dir` `genode` 'vde'
+Useful targets are: `all` `toolchain` `ports` `genode_build_dir` `dom0` 'vde'
 
 Inter-target dependencies are not resolved automatically (yet).
 

@@ -1,0 +1,10 @@
+LICENSE   := MIT
+VERSION   := git
+DOWNLOADS := jsmn.git
+
+URL(jsmn) := https://github.com/zserge/jsmn.git
+REV(jsmn) := 4a54ae6987a37ca3734ac1e9ab6b7f1f44e2712d
+DIR(jsmn) := src/lib/jsmn
+
+DIRS := include
+DIR_CONTENT(include) := src/lib/jsmn/

@@ -11,9 +11,9 @@ BUILD_CONF           = $(GENODE_BUILD_DIR)/etc/build.conf
 
 QEMU_OPT            += -net vde,sock=/tmp/switch1,model=ne2k_pci,macaddr=52:54:00:00:AA:02
 
-.PHONY: all toolchain ports foc libports genode genode_build_dir clean vde
+.PHONY: all toolchain ports foc libports dom0 genode_build_dir clean vde
 
-all: toolchain ports genode_build_dir genode
+all: toolchain ports genode_build_dir dom0
 
 toolchain:
 	mkdir -p $(TOOLCHAIN_BUILD_DIR)
@@ -33,7 +33,7 @@ genode_build_dir:
 	printf 'REPOSITORIES += $$(GENODE_DIR)/repos/libports\n' >> $(BUILD_CONF)
 	printf 'REPOSITORIES += $$(GENODE_DIR)/repos/dom0\n' >> $(BUILD_CONF)
 
-genode:
+dom0:
 	$(MAKE) -j10 -C $(GENODE_BUILD_DIR) run/dom0
 
 vde: vde-stop
