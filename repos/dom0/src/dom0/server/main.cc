@@ -21,6 +21,8 @@ struct Config
 	unsigned int bufSize;
 	char listenAddress[16];
 	unsigned int port;
+	unsigned int launchpadQuota;
+	unsigned int taskQuota;
 };
 
 template <typename T>
@@ -52,17 +54,23 @@ Config loadConfig()
 	config.bufSize = Nic::Packet_allocator::DEFAULT_PACKET_SIZE * 128;
 	std::strcpy(config.listenAddress, "0.0.0.0");
 	config.port = 3001;
+	config.launchpadQuota = 4*1024*1024;
+	config.taskQuota = 512*1024;
 
 	const Genode::Xml_node& configNode = Genode::config()->xml_node();
 	getNodeValue(configNode, "buf-size", &config.bufSize);
 	getNodeValue(configNode, "listen-address", config.listenAddress, 16);
 	getNodeValue(configNode, "port", &config.port);
+	getNodeValue(configNode, "launchpad-quota", &config.launchpadQuota);
+	getNodeValue(configNode, "launchpad-task", &config.taskQuota);
 
 	// Print config
 	PINF("Config readouts:\n");
 	PINF("\tBuffer size: %d\n", config.bufSize);
 	PINF("\tListening address: %s\n", config.listenAddress);
 	PINF("\tPort: %d\n", config.port);
+	PINF("\tLaunchpad Quota: %d\n", config.launchpadQuota);
+	PINF("\tTask Quota: %d\n", config.taskQuota);
 
 	return config;
 }
@@ -120,7 +128,7 @@ void parseTaskDescription(const char* json, std::vector<taskDescription>& tasks)
 
 int runServer(const Config& config)
 {
-	Launchpad launchpad(1024*1024);
+	Launchpad launchpad(config.launchpadQuota);
 
 	lwip_tcpip_init();
 
@@ -141,7 +149,6 @@ int runServer(const Config& config)
 	/* Check if dataspace was falsely freed */
 	while (true)
 	{
-		// launchpad.start_child("hello", 512*1024, cap);
 		server.connect();
 
 		while (true)
@@ -149,7 +156,7 @@ int runServer(const Config& config)
 			//The first 4 Byte of a new message always
 			//tell us what the message contains,
 			//either a LUA or a binary (control) command
-			// NETCHECK_LOOP(server.receiveInt32_t(message));
+			NETCHECK_LOOP(server.receiveInt32_t(message));
 			message = CONTROL;
 			if (message == LUA)
 			{
@@ -200,9 +207,53 @@ int runServer(const Config& config)
 				PINF("received JSON %s", json.data());
 				parseTaskDescription(json.data(), tasks);
 			}
-			break;
+			else if (message == SEND_BINARIES)
+			{
+				// read the number of binaries
+				// loop
+				// read 8 byte binary name
+				// read the binary name
+				// read the binary length
+				// save the binary
+
+				PINF("Ready to receive binaries.\n");
+				int numBinaries = 0;
+				NETCHECK_LOOP(server.receiveInt32_t(numBinaries));
+
+				PINF("%d binar%s to be sent.\n", numBinaries, numBinaries == 1 ? "y" : "ies");
+
+				for (int i = 0; i < numBinaries; i++)
+				{
+					PINF("Waiting for Binary %d\n", i);
+					char name[9];
+
+					NETCHECK_LOOP(server.receiveData(name, 8));
+					name[8]='\0';
+					std::string binaryName(name);
+
+					int binarySize;
+					NETCHECK_LOOP(server.receiveInt32_t(binarySize));
+					std::vector<char>& binary = binaries[binaryName];
+					binary.resize(binarySize);
+
+					NETCHECK_LOOP(server.receiveData(binary.data(), binarySize));
+
+					PINF("Got binary %s of size %d.\n", name, binarySize);
+
+					NETCHECK_LOOP(server.sendInt32_t(GO_SEND));
+				}
+			}
+			else if (message == START)
+			{
+				PINF("Starting tasks.\n");
+				while (!tasks.empty())
+				{
+					taskDescription& task = tasks.back();
+					launchpad.start_child(task.binaryName, config.taskQuota, Genode::Dataspace_capability());
+					tasks.pop_back();
+				}
+			}
 		}
-		break;
 	}
 
 	return 0;
