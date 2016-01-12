@@ -7,8 +7,6 @@ http://genode.org/documentation/developer-resources/getting_started
 
 The toolchain installs executables to `/usr/local/genode-gcc` as part of the `tool_chain` script. Everything else stays within the repository.
 
-Useful targets are: `all` `toolchain` `ports` `genode_build_dir` `dom0` 'vde'
-
 Inter-target dependencies are not resolved automatically (yet).
 
 ### Required packages
@@ -46,3 +44,6 @@ The provided Makefile creates the following directories:
 
 ### VDE
 The VDE network can be set up using `make vde`. VDE functionality requires a manual build of QEMU with VDE support enabled. Reset the VDE network using `make vde-stop`.
+
+### DHCP
+This port of dom0 supports DHCP. For this, change the `<dhcp>` field in `dom0.run` to `yes` and make sure to run a DHCP server in the network. The make target `dhcp` starts a Slirp DHCP server in the VDE network. Kill it using the `dhcp-stop` target. Tap interfaces and routes in the VDE network have to be changed accordingly (see `vde` target).

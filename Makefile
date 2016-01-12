@@ -9,11 +9,11 @@ TOOLCHAIN_BUILD_DIR ?= $(BUILD_DIR)/toolchain-$(TOOLCHAIN_TARGET)
 GENODE_BUILD_DIR    ?= $(BUILD_DIR)/genode-$(GENODE_TARGET)
 BUILD_CONF           = $(GENODE_BUILD_DIR)/etc/build.conf
 
-QEMU_OPT            += -net vde,sock=/tmp/switch1,model=ne2k_pci,macaddr=52:54:00:00:AA:02
-
 .PHONY: all toolchain ports foc libports dom0 genode_build_dir clean vde
 
-all: toolchain ports genode_build_dir dom0
+all: toolchain ports genode_build_dir dom0 platform
+
+platform: genode_build_dir dom0
 
 toolchain:
 	mkdir -p $(TOOLCHAIN_BUILD_DIR)
@@ -38,17 +38,23 @@ dom0:
 
 vde: vde-stop
 	@vde_switch -d -s /tmp/switch1
-
 	@sudo vde_tunctl -u $(USER) -t tap0
 	@sudo ifconfig tap0 192.168.0.254 up
-	@sudo route add -host 192.168.0.10 dev tap0
-
+	@sudo route add -host 192.168.0.14 dev tap0
 	@vde_plug2tap --daemon -s /tmp/switch1 tap0
 
 vde-stop:
 	@-pkill vde_switch
 	@-sudo vde_tunctl -d tap0
 	@-rm -rf /tmp/switch1
+
+dhcp: dhcp-stop
+	@slirpvde -d -s /tmp/switch1 -dhcp
+
+dhcp-stop:
+	@-pkill slirpvde
+
+clean-network: dhcp-stop vde-stop
 
 clean:
 	rm -rf $(BUILD_DIR)

@@ -56,6 +56,7 @@ set config {
 		<resource name="RAM" quantum="10M"/>
 		<provides><service name="dom0"/></provides>
 		<config>
+			<dhcp>no</dhcp>
 			<listen-address>192.168.0.14</listen-address>
 			<port>3001</port>
 		</config>
@@ -96,6 +97,9 @@ install_config $config
 #
 # Boot image
 #
+
+append qemu_args "-net vde,sock=/tmp/switch1 "
+append qemu_args "-net nic,model=lan9118,macaddr=02:00:00:00:01:01 "
 
 set boot_modules {
 	core init dom0

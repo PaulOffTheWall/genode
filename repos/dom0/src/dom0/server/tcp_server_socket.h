@@ -6,7 +6,7 @@
 class TcpServerSocket: public TcpSocket
 {
 public:
-	TcpServerSocket(ip_addr_t address, int port);
+	TcpServerSocket(const char* const address, int port);
 
 	~TcpServerSocket();
 
@@ -16,7 +16,6 @@ public:
 
 private:
 	int ownSocket;
-	struct sockaddr_in ownSockaddr_in;
-	socklen_t targetSockaddr_inSize;
-
+	struct sockaddr_in in_addr;
+	sockaddr target_addr;
 };

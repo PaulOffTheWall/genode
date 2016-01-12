@@ -19,12 +19,16 @@
 struct Config
 {
 	unsigned int bufSize;
+	char dhcp[4];
 	char listenAddress[16];
+	char networkMask[16];
+	char networkGateway[16];
 	unsigned int port;
 	unsigned int launchpadQuota;
 	unsigned int taskQuota;
 };
 
+// Get XML node value (not attribute) if it exists.
 template <typename T>
 bool getNodeValue(const Genode::Xml_node& configNode, const char* type, T* out)
 {
@@ -36,6 +40,7 @@ bool getNodeValue(const Genode::Xml_node& configNode, const char* type, T* out)
 	return false;
 }
 
+// Get XML node string value (not attribute) if it exists.
 bool getNodeValue(const Genode::Xml_node& configNode, const char* type, char* dst, size_t max_len)
 {
 	if (configNode.has_sub_node(type))
@@ -46,28 +51,38 @@ bool getNodeValue(const Genode::Xml_node& configNode, const char* type, char* ds
 	return false;
 }
 
+// Set defaults and overwrite if XML entries are found in the run config.
 Config loadConfig()
 {
 	Config config;
 
 	// Defaults
 	config.bufSize = Nic::Packet_allocator::DEFAULT_PACKET_SIZE * 128;
+	std::strcpy(config.dhcp, "no");
 	std::strcpy(config.listenAddress, "0.0.0.0");
+	std::strcpy(config.networkMask, "255.255.255.0");
+	std::strcpy(config.networkGateway, "192.168.0.254");
 	config.port = 3001;
 	config.launchpadQuota = 4*1024*1024;
 	config.taskQuota = 512*1024;
 
 	const Genode::Xml_node& configNode = Genode::config()->xml_node();
 	getNodeValue(configNode, "buf-size", &config.bufSize);
+	getNodeValue(configNode, "dhcp", config.dhcp, 4);
 	getNodeValue(configNode, "listen-address", config.listenAddress, 16);
+	getNodeValue(configNode, "network-mask", config.networkMask, 16);
+	getNodeValue(configNode, "network-gateway", config.networkGateway, 16);
 	getNodeValue(configNode, "port", &config.port);
 	getNodeValue(configNode, "launchpad-quota", &config.launchpadQuota);
-	getNodeValue(configNode, "launchpad-task", &config.taskQuota);
+	getNodeValue(configNode, "task-quota", &config.taskQuota);
 
 	// Print config
 	PINF("Config readouts:\n");
 	PINF("\tBuffer size: %d\n", config.bufSize);
+	PINF("\tUse DHCP: %s\n", config.dhcp);
 	PINF("\tListening address: %s\n", config.listenAddress);
+	PINF("\tNetwork mask: %s\n", config.networkMask);
+	PINF("\tNetwork gateway: %s\n", config.networkGateway);
 	PINF("\tPort: %d\n", config.port);
 	PINF("\tLaunchpad Quota: %d\n", config.launchpadQuota);
 	PINF("\tTask Quota: %d\n", config.taskQuota);
@@ -75,6 +90,7 @@ Config loadConfig()
 	return config;
 }
 
+// Parse json file for task descriptions and save in struct vector.
 void parseTaskDescription(const char* json, std::vector<taskDescription>& tasks)
 {
 	PINF("Parsing the json file.");
@@ -132,21 +148,29 @@ int runServer(const Config& config)
 
 	lwip_tcpip_init();
 
-	/* Initialize network stack and do DHCP */
-	if (lwip_nic_init(0, 0, 0, config.bufSize, config.bufSize)) {
-		PERR("We got no IP address!");
-		return 1;
+	char listenAddress[16];
+	if (std::strcmp(config.dhcp, "yes") == 0)
+	{
+		*listenAddress = 0;
+		if (lwip_nic_init(0, 0, 0, config.bufSize, config.bufSize)) {
+			PERR("We got no IP address!");
+			return 1;
+		}
 	}
-	ip_addr_t addr = {0};
-	inet_aton(config.listenAddress, &addr);
-
-	TcpServerSocket server(addr, config.port);
+	else
+	{
+		std::strcpy(listenAddress, config.listenAddress);
+		if (lwip_nic_init(inet_addr(config.listenAddress), inet_addr(config.networkMask), inet_addr(config.networkGateway), config.bufSize, config.bufSize)) {
+			PERR("We got no IP address!");
+			return 1;
+		}
+	}
+	TcpServerSocket server(listenAddress, config.port);
 	int32_t message = 0;
 
 	std::unordered_map<std::string, std::vector<char>> binaries;
 	std::vector<taskDescription> tasks;
 
-	/* Check if dataspace was falsely freed */
 	while (true)
 	{
 		server.connect();
