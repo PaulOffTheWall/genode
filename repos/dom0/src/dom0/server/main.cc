@@ -93,7 +93,7 @@ Config loadConfig()
 // Parse json file for task descriptions and save in struct vector.
 void parseTaskDescription(const char* json, std::vector<taskDescription>& tasks)
 {
-	PINF("Parsing the json file.");
+	PINF("Parsing json file.");
 	jsmn_parser p;
 	jsmntok_t t[128];
 
@@ -104,13 +104,13 @@ void parseTaskDescription(const char* json, std::vector<taskDescription>& tasks)
 
 	if (res < 0)
 	{
-		PERR("Failed to parse.");
+		PERR("Failed to parse.\n");
 		return;
 	}
 
 	if (res<1 || t[0].type !=JSMN_ARRAY)
 	{
-		PERR("Array expected.");
+		PERR("Array expected.\n");
 		return;
 	}
 
@@ -153,7 +153,7 @@ int runServer(const Config& config)
 	{
 		*listenAddress = 0;
 		if (lwip_nic_init(0, 0, 0, config.bufSize, config.bufSize)) {
-			PERR("We got no IP address!");
+			PERR("We got no IP address!\n");
 			return 1;
 		}
 	}
@@ -161,7 +161,7 @@ int runServer(const Config& config)
 	{
 		std::strcpy(listenAddress, config.listenAddress);
 		if (lwip_nic_init(inet_addr(config.listenAddress), inet_addr(config.networkMask), inet_addr(config.networkGateway), config.bufSize, config.bufSize)) {
-			PERR("We got no IP address!");
+			PERR("We got no IP address!\n");
 			return 1;
 		}
 	}
@@ -181,54 +181,27 @@ int runServer(const Config& config)
 			//tell us what the message contains,
 			//either a LUA or a binary (control) command
 			NETCHECK_LOOP(server.receiveInt32_t(message));
-			message = CONTROL;
-			if (message == LUA)
+			if (message == TASK_DESC)
 			{
-				PERR("LUA Message received but not yet supported.\n");
-			}
-			if (message == CONTROL)
-			{
-				PINF("Control Message received");
-				NETCHECK_LOOP(server.receiveInt32_t(message));
-				if (message == SEND_BINARY)
-				{
-					//The communication partner wants to send us a binary.
-
-					//Get the size of the binary.
-					NETCHECK_LOOP(server.receiveInt32_t(message));
-					PDBG("Binary size will be %i Bytes.\n", message);
-					std::vector<char>& bin = binaries[""];
-					bin.resize(message);
-
-					//Our partner can now start sending.
-					NETCHECK_LOOP(server.sendInt32_t(GO_SEND));
-
-					//Get it...
-					NETCHECK_LOOP(server.receiveData(bin.data(), bin.size()));
-					PINF("Binary received.\n");
-				}
-			}
-			else if (message == TASK_DESC)
-			{
-				PINF("Ready to receive task description\n");
+				PINF("Ready to receive task description.\n");
 				// get the length of the JSON file
 				// receive the JSON
 				// read the JSON
 				// store it in an array of structs
 
-				int json_size;
+				int jsonSize;
 
 				// get the size of JSON
-				NETCHECK_LOOP(server.receiveInt32_t(json_size));
-				json_size = 512;
+				NETCHECK_LOOP(server.receiveInt32_t(jsonSize));
 
-				PINF("Ready to receive json of size %d \n",json_size);
-				std::vector<char> json(json_size);
+				PINF("Ready to receive json of size %d.\n", jsonSize);
+				std::vector<char> json(jsonSize);
 
 				// get the JSON data (save in the same char* space for binary
 				NETCHECK_LOOP(server.receiveData(json.data(), json.size()));
 
-				PINF("received JSON %s", json.data());
+				PINF("Received JSON %s", json.data());
+				tasks.clear();
 				parseTaskDescription(json.data(), tasks);
 			}
 			else if (message == SEND_BINARIES)
@@ -248,7 +221,7 @@ int runServer(const Config& config)
 
 				for (int i = 0; i < numBinaries; i++)
 				{
-					PINF("Waiting for Binary %d\n", i);
+					PINF("Waiting for binary %d\n", i);
 					char name[9];
 
 					NETCHECK_LOOP(server.receiveData(name, 8));
@@ -258,11 +231,13 @@ int runServer(const Config& config)
 					int binarySize;
 					NETCHECK_LOOP(server.receiveInt32_t(binarySize));
 					std::vector<char>& binary = binaries[binaryName];
+
+					PINF("Reserving %d bytes for binary %d.\n", binarySize, i);
 					binary.resize(binarySize);
 
 					NETCHECK_LOOP(server.receiveData(binary.data(), binarySize));
 
-					PINF("Got binary %s of size %d.\n", name, binarySize);
+					PINF("Got binary '%s' of size %d.\n", name, binarySize);
 
 					NETCHECK_LOOP(server.sendInt32_t(GO_SEND));
 				}
@@ -276,6 +251,10 @@ int runServer(const Config& config)
 					launchpad.start_child(task.binaryName, config.taskQuota, Genode::Dataspace_capability());
 					tasks.pop_back();
 				}
+			}
+			else
+			{
+				PWRN("Unknown message: %d\n", message);
 			}
 		}
 	}

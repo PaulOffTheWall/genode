@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--Hier kommen die Tasks-->
+<taskset xmlns="http://www.tmsxmlns.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.tmsxmlns.com taskset.xsd">
+
+  <periodictask>
+    <id>1</id>
+    <executiontime>1</executiontime>
+    <criticaltime>1</criticaltime>
+    <ucfirmrt/>
+    <uawmean>
+      <size>10</size>
+    </uawmean>
+    <priority>1</priority>
+    <period>10</period>
+    <offset>0</offset>
+    <matrixSize>3</matrixSize>
+    <pkg>namaste</pkg>
+  </periodictask>
+
+
+  <periodictask>
+    <id>2</id>
+    <executiontime>3</executiontime>
+    <criticaltime>3</criticaltime>
+    <ucfirmrt/>
+    <uawmean>
+      <size>10</size>
+    </uawmean>
+    <priority>1</priority>
+    <period>15</period>
+    <offset>0</offset>
+    <matrixSize>10</matrixSize>
+    <pkg>namaste</pkg>
+  </periodictask>
+
+
+  <periodictask>
+    <id>3</id>
+    <executiontime>3</executiontime>
+    <criticaltime>3</criticaltime>
+    <ucfirmrt/>
+    <uawmean>
+      <size>10</size>
+    </uawmean>
+    <priority>1</priority>
+    <period>14</period>
+    <offset>0</offset>
+    <matrixSize>31</matrixSize>
+    <pkg>hey</pkg>
+  </periodictask>
+
+
+  <periodictask>
+    <id>4</id>
+    <executiontime>2</executiontime>
+    <criticaltime>2</criticaltime>
+    <ucfirmrt/>
+    <uawmean>
+      <size>10</size>
+    </uawmean>
+    <priority>1</priority>
+    <period>2</period>
+    <offset>0</offset>
+    <matrixSize>38</matrixSize>
+    <pkg>namaste</pkg>
+  </periodictask>
+
+
+  <periodictask>
+    <id>5</id>
+    <executiontime>3</executiontime>
+    <criticaltime>3</criticaltime>
+    <ucfirmrt/>
+    <uawmean>
+      <size>10</size>
+    </uawmean>
+    <priority>1</priority>
+    <period>5</period>
+    <offset>0</offset>
+    <matrixSize>19</matrixSize>
+    <pkg>namaste</pkg>
+  </periodictask>
+
+</taskset>

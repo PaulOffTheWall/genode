@@ -47,3 +47,14 @@ The VDE network can be set up using `make vde`. VDE functionality requires a man
 
 ### DHCP
 This port of dom0 supports DHCP. For this, change the `<dhcp>` field in `dom0.run` to `yes` and make sure to run a DHCP server in the network. The make target `dhcp` starts a Slirp DHCP server in the VDE network. Kill it using the `dhcp-stop` target. Tap interfaces and routes in the VDE network have to be changed accordingly (see `vde` target).
+
+### dom0 Client
+The python script Dom0Client provides a simple class to communicate with Genode's dom0 server.
+
+In order to run it you need the module `xmltodict`:
+
+`sudo apt-get install python3-pip`
+
+`sudo python3 -m pip install xmltodict`
+
+Run the script and use `session`'s functions `sendDescs`, `sendTascs`, and `start` to communicate with the Genode server.
