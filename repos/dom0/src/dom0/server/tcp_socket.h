@@ -14,14 +14,14 @@ extern "C" {
 class TcpSocket
 {
 public:
+	TcpSocket();
 
 	virtual int connect() = 0;
-	virtual int disconnect() = 0;
+	virtual void disconnect() = 0;
 
 	virtual ~TcpSocket()
 	{
 	}
-	;
 
 	//Receive data from the socket and write it into data.
 	ssize_t receiveData(void* data, size_t size);

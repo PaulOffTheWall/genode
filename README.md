@@ -29,9 +29,10 @@ For some additional ports you may need:
 ### Folder structure
 Custom repos:
 
-| Folder        | Description                            |
-| ------------- | -------------------------------------- |
-| `repos/dom0/` | central network module; port from L4RE |
+| Folder         | Description                               |
+| -------------- | ----------------------------------------- |
+| `repos/dom0/`  | central network module; port from L4RE    |
+| `dom0-client/` | Python client for dom0 test communication |
 
 The provided Makefile creates the following directories:
 

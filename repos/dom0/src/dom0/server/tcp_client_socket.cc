@@ -32,9 +32,8 @@ int TcpClientSocket::connect()
 		return -errno;
 }
 
-int TcpClientSocket::disconnect()
+void TcpClientSocket::disconnect()
 {
 	lwip_close(targetSocket);
 	connected = false;
-	return 1;
 }

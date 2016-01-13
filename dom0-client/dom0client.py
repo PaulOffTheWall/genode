@@ -18,6 +18,7 @@ class Dom0Session:
 	def connect(self, host, port):
 		"""Connect to the Genode dom0 server."""
 		self.conn = socket.create_connection((host, port))
+		print('Connected.')
 
 	def readTasks(self, tasksFile):
 		"""Read XML file, discard meta data, and purge invalid tasks."""
@@ -39,7 +40,6 @@ class Dom0Session:
 
 		# Convert to JSON file.
 		self.tasks = json.dumps(tasks)
-		print('JSON tasks description:\n' + self.tasks)
 
 	def sendDescs(self):
 		"""Send task descriptions to the dom0 server."""
@@ -78,4 +78,16 @@ class Dom0Session:
 		self.conn.close();
 
 session = Dom0Session()
+
+print('''
+Available commands:
+	session.sendDescs()
+	session.sendBins()
+	session.start()
+
+	session.readTasks(tasksFile)
+	session.connect(host, port)
+	session.close()
+''')
+
 code.interact(local=locals())

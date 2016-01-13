@@ -3,7 +3,7 @@
 #include "tcp_socket.h"
 
 
-class TcpClientSocket: public TcpSocket
+class TcpClientSocket : public TcpSocket
 {
 public:
 	TcpClientSocket(ip_addr_t address, int port);
@@ -12,7 +12,7 @@ public:
 
 	int connect();
 
-	int disconnect();
+	void disconnect();
 
 
 private:

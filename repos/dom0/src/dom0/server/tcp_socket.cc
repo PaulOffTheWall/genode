@@ -3,6 +3,12 @@
 
 #include <errno.h>
 
+TcpSocket::TcpSocket() :
+	targetSocket(0),
+	connected(false)
+{
+}
+
 
 //Receive data from the socket and write it into data.
 ssize_t TcpSocket::receiveData(void* data, size_t size)
