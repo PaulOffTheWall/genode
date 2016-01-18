@@ -95,6 +95,7 @@ void Dom0Server::serve()
 			// Get JSON file.
 			NETCHECK_LOOP(receiveData(json.data(), json.size()));
 			PINF("Received JSON %s", json.data());
+			_taskMngr.clearTasks();
 			_taskMngr.addTasks(json.data());
 		}
 		else if (message == SEND_BINARIES)

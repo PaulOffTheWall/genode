@@ -3,6 +3,8 @@
 
 #include <vector>
 #include <unordered_map>
+#include <os/attached_ram_dataspace.h>
+#include <launchpad/launchpad.h>
 
 #include "task_description.h"
 
@@ -18,10 +20,14 @@ public:
 	char* const getBinarySpace(const std::string& name, size_t size);
 	void clearBinaries();
 	void start();
+	void stop();
+	void startTask(const TaskDescription& td);
 
 protected:
-	std::unordered_map<std::string, std::vector<char>> _binaries;
+	std::unordered_map<std::string, Genode::Attached_ram_dataspace> _binaries;
+
 	std::vector<TaskDescription> _tasks;
+	Launchpad _launchpad;
 };
 
 #endif

@@ -186,7 +186,8 @@ void Launchpad::process_config()
 
 Launchpad_child *Launchpad::start_child(const char *filename,
                                         unsigned long ram_quota,
-                                        Genode::Dataspace_capability config_ds)
+                                        Genode::Dataspace_capability config_ds,
+                                        Genode::Dataspace_capability binary_ds)
 {
 	printf("starting %s with quota %lu\n", filename, ram_quota);
 
@@ -212,19 +213,27 @@ Launchpad_child *Launchpad::start_child(const char *filename,
 	/* lookup executable elf binary */
 	Dataspace_capability  file_cap;
 	Rom_session_capability rom_cap;
-	try {
-		/*
-		 * When creating a ROM connection for a non-existing file, the
-		 * constructor of 'Rom_connection' throws a 'Parent::Service_denied'
-		 * exception.
-		 */
-		Rom_connection rom(filename, unique_name);
-		rom.on_destruction(Rom_connection::KEEP_OPEN);
-		rom_cap  = rom.cap();
-		file_cap = rom.dataspace();
-	} catch (...) {
-		printf("Error: Could not access file \"%s\" from ROM service.\n", filename);
-		return 0;
+	if (binary_ds == Genode::Dataspace_capability())
+	{
+		/* invalid dataspace, look up in file */
+		try {
+			/*
+			 * When creating a ROM connection for a non-existing file, the
+			 * constructor of 'Rom_connection' throws a 'Parent::Service_denied'
+			 * exception.
+			 */
+			Rom_connection rom(filename, unique_name);
+			rom.on_destruction(Rom_connection::KEEP_OPEN);
+			rom_cap  = rom.cap();
+			file_cap = rom.dataspace();
+		} catch (...) {
+			printf("Error: Could not access file \"%s\" from ROM service.\n", filename);
+			return 0;
+		}
+	}
+	else
+	{
+		file_cap = binary_ds;
 	}
 
 	/* create ram session for child with some of our own quota */

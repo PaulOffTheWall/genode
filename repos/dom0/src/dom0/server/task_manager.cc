@@ -1,12 +1,15 @@
 #include "task_manager.h"
 
 #include <cstring>
+#include <base/env.h>
 #include <base/printf.h>
 #include "json_util.h"
+#include "config.h"
 
 TaskManager::TaskManager() :
 	_binaries(),
-	_tasks()
+	_tasks(),
+	_launchpad(Config::get().launchpadQuota)
 {
 }
 
@@ -21,8 +24,6 @@ void TaskManager::addTask(const TaskDescription& td)
 
 void TaskManager::addTasks(const char* const json)
 {
-	clearTasks();
-
 	PINF("Parsing json file.");
 	jsmn_parser p;
 	jsmntok_t t[128];
@@ -81,8 +82,10 @@ void TaskManager::clearTasks()
 char* const TaskManager::getBinarySpace(const std::string& name, size_t size)
 {
 	PINF("Reserving %d bytes for binary '%s'.\n", size, name.c_str());
-	_binaries[name].resize(size);
-	return _binaries[name].data();
+	Genode::Ram_session* ram = Genode::env()->ram_session();
+
+	// Hoorray for C++ syntax. This basically forwards ctor arguments so there is no copy or dtor call involved.
+	return _binaries.emplace(std::piecewise_construct, std::make_tuple(name), std::make_tuple(ram, size)).first->second.local_addr<char>();
 }
 
 void TaskManager::clearBinaries()
@@ -92,9 +95,20 @@ void TaskManager::clearBinaries()
 
 void TaskManager::start()
 {
+	stop();
 	PINF("Starting tasks.\n");
 	while (!_tasks.empty())
 	{
+		startTask(_tasks.back());
 		_tasks.pop_back();
 	}
+}
+
+void TaskManager::stop()
+{
+}
+
+void TaskManager::startTask(const TaskDescription& td)
+{
+	_launchpad.start_child(td.binaryName, Config::get().taskQuota, Genode::Dataspace_capability(), _binaries.at(td.binaryName).cap());
 }

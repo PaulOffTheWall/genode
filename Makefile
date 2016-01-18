@@ -11,9 +11,23 @@ BUILD_CONF           = $(GENODE_BUILD_DIR)/etc/build.conf
 
 .PHONY: all toolchain ports foc libports dom0 genode_build_dir clean vde
 
-all: toolchain ports genode_build_dir dom0 platform
+all: toolchain ports genode_build_dir dom0 platform tasks
 
 platform: genode_build_dir dom0
+
+tasks: hey namaste tumatmul
+
+hey:
+	$(MAKE) -C $(GENODE_BUILD_DIR) dom0/hey
+	cp $(GENODE_BUILD_DIR)/dom0/hey/hey dom0-client/
+
+namaste:
+	$(MAKE) -C $(GENODE_BUILD_DIR) dom0/namaste
+	cp $(GENODE_BUILD_DIR)/dom0/namaste/namaste dom0-client/
+
+tumatmul:
+	$(MAKE) -C $(GENODE_BUILD_DIR) dom0/tumatmul
+	cp $(GENODE_BUILD_DIR)/dom0/tumatmul/tumatmul dom0-client/
 
 toolchain:
 	mkdir -p $(TOOLCHAIN_BUILD_DIR)
