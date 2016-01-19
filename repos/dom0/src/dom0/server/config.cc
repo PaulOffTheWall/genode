@@ -39,8 +39,8 @@ Config loadConfig()
 	std::strcpy(config.networkMask, "255.255.255.0");
 	std::strcpy(config.networkGateway, "192.168.0.254");
 	config.port = 3001;
-	config.launchpadQuota = 4*1024*1024;
-	config.taskQuota = 512*1024;
+	config.launchpadQuota = 16*1024*1024;
+	config.taskQuota = 1024*1024;
 
 	const Genode::Xml_node& configNode = Genode::config()->xml_node();
 	getNodeValue(configNode, "buf-size", &config.bufSize);

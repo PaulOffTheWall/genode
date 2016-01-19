@@ -4,81 +4,65 @@
 
   <periodictask>
     <id>1</id>
-    <executiontime>1</executiontime>
-    <criticaltime>1</criticaltime>
+    <executiontime>4</executiontime>
+    <criticaltime>4</criticaltime>
     <ucfirmrt/>
     <uawmean>
       <size>10</size>
     </uawmean>
     <priority>1</priority>
-    <period>10</period>
+    <period>13</period>
     <offset>0</offset>
-    <matrixSize>3</matrixSize>
-    <pkg>namaste</pkg>
+    <matrixSize>6</matrixSize>
+    <pkg>tumatmul</pkg>
   </periodictask>
 
 
   <periodictask>
     <id>2</id>
-    <executiontime>3</executiontime>
-    <criticaltime>3</criticaltime>
+    <executiontime>5</executiontime>
+    <criticaltime>5</criticaltime>
     <ucfirmrt/>
     <uawmean>
       <size>10</size>
     </uawmean>
     <priority>1</priority>
-    <period>15</period>
+    <period>17</period>
     <offset>0</offset>
-    <matrixSize>10</matrixSize>
-    <pkg>namaste</pkg>
+    <matrixSize>7</matrixSize>
+    <pkg>tumatmul</pkg>
   </periodictask>
 
 
   <periodictask>
     <id>3</id>
-    <executiontime>3</executiontime>
-    <criticaltime>3</criticaltime>
+    <executiontime>5</executiontime>
+    <criticaltime>5</criticaltime>
     <ucfirmrt/>
     <uawmean>
       <size>10</size>
     </uawmean>
     <priority>1</priority>
-    <period>14</period>
+    <period>13</period>
     <offset>0</offset>
-    <matrixSize>31</matrixSize>
-    <pkg>hey</pkg>
+    <matrixSize>34</matrixSize>
+    <pkg>namaste</pkg>
   </periodictask>
 
 
   <periodictask>
     <id>4</id>
-    <executiontime>2</executiontime>
-    <criticaltime>2</criticaltime>
+    <executiontime>5</executiontime>
+    <criticaltime>5</criticaltime>
     <ucfirmrt/>
     <uawmean>
       <size>10</size>
     </uawmean>
     <priority>1</priority>
-    <period>2</period>
+    <period>3</period>
     <offset>0</offset>
-    <matrixSize>38</matrixSize>
-    <pkg>namaste</pkg>
-  </periodictask>
-
-
-  <periodictask>
-    <id>5</id>
-    <executiontime>3</executiontime>
-    <criticaltime>3</criticaltime>
-    <ucfirmrt/>
-    <uawmean>
-      <size>10</size>
-    </uawmean>
-    <priority>1</priority>
-    <period>5</period>
-    <offset>0</offset>
-    <matrixSize>19</matrixSize>
-    <pkg>namaste</pkg>
+    <matrixSize>46</matrixSize>
+    <pkg>tumatmul</pkg>
   </periodictask>
 
 </taskset>

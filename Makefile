@@ -11,9 +11,16 @@ BUILD_CONF           = $(GENODE_BUILD_DIR)/etc/build.conf
 
 .PHONY: all toolchain ports foc libports dom0 genode_build_dir clean vde
 
-all: toolchain ports genode_build_dir dom0 platform tasks
+all: tms descs toolchain ports platform
 
-platform: genode_build_dir dom0
+platform: genode_build_dir tasks dom0
+
+tms:
+	@mkdir -p tms-sim-2014-12/build
+	@cd tms-sim-2014-12/build && ../build-local.sh .. && $(MAKE) && $(MAKE) install
+
+descs:
+	@tms-sim-2014-12/build/bin/generator -o dom0-client/tasks.xml -n 4
 
 tasks: hey namaste tumatmul
 

@@ -1,0 +1,28 @@
+# $Id: README 825 2014-12-17 14:51:00Z klugeflo $
+
+Requirements
+============
+The following packages must be installed:
+>=sys-devel/gcc-4.7
+>=dev-util/cmake-2.8.12
+dev-libs/libxml2
+Multithreading support must be available for mkevals.
+
+If you want to build the API documentation, additionally the following
+packages are required:
+app-doc/doxygen
+
+
+Installation
+============
+
+$ cd build
+$ ../build-local.sh ..
+$ make
+$ make install
+
+Installs all binaries to build/bin
+
+If you like to perform a system-wide installation, you can simply used
+'cmake' instead of 'build-local.sh'. Currently, we recommend to
+perform only a local (non system-wide) installation.

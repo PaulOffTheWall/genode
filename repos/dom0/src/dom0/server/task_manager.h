@@ -28,6 +28,8 @@ protected:
 
 	std::vector<TaskDescription> _tasks;
 	Launchpad _launchpad;
+
+	static bool _checkDynamicElf(Genode::Attached_ram_dataspace& ds);
 };
 
 #endif
