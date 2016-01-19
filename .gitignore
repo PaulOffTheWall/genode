@@ -40,4 +40,8 @@ __pycache__
 /repos/qt4/tool/qmake/qmake
 /repos/qt4/tool/rcc
 /repos/qt4/tool/uic
-
+/tms-sim-2014-12/build
+/dom0-client/tasks.xml
+/dom0-client/hey
+/dom0-client/namaste
+/dom0-client/tumatmul
