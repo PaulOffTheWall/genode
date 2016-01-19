@@ -60,8 +60,10 @@ int main(int argc, char*argv[]) {
             int ct = et;
             int period = rand() % 20 + 1;
             int prio = 1;
-            int matrixSize = rand() % 50 + 1;
             int offset = 0;
+            PeriodicLoadTask::GenodeConfig config;
+            config.matrixSize =rand() % 50 + 1;
+
             taskset.push_back(new PeriodicLoadTask(taskNo,
                                                    period,
                                                    et,
@@ -70,7 +72,7 @@ int main(int argc, char*argv[]) {
                                                    uaPtr->clone(),
                                                    offset,
                                                    prio,
-                                                   matrixSize));
+                                                   config));
         }
 
         // Write Taskset

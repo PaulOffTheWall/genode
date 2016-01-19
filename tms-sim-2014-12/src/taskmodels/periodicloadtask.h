@@ -14,8 +14,13 @@ namespace tmssim {
 
   class PeriodicLoadTask : public Task {
   public:
+    struct GenodeConfig
+    {
+        int matrixSize;
+    };
+
     PeriodicLoadTask(unsigned int _id, int _period, int _et, int _ct,
-    UtilityCalculator* __uc, UtilityAggregator* __ua, int o=0, int _prio=1, int _matrixSize=3);
+    UtilityCalculator* __uc, UtilityAggregator* __ua, int o=0, int _prio=1, const GenodeConfig& config = GenodeConfig());
     PeriodicLoadTask(const PeriodicLoadTask& rhs);
 
     virtual std::ostream& print(std::ostream& ost) const;
@@ -67,7 +72,7 @@ namespace tmssim {
 
     int period;
     int offset; ///< offset for periodic activation
-    int matrixSize;
+    GenodeConfig config;
     double lastUtility;
     double historyUtility;
   };

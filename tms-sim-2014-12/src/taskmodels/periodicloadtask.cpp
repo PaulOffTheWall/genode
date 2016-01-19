@@ -25,9 +25,9 @@ namespace tmssim {
                                      UtilityAggregator* __ua,
                                      int o,
                                      int _prio,
-                                     int _matrixSize)
+                                     const GenodeConfig& config)
     : Task(_id, _et, _ct, __uc, __ua, _prio),
-      period(_period), offset(o), lastUtility(0), historyUtility(1), matrixSize(_matrixSize) {
+      period(_period), offset(o), lastUtility(0), historyUtility(1), config(config) {
   }
   
 
@@ -146,8 +146,11 @@ namespace tmssim {
     Task::writeData(writer);
     xmlTextWriterWriteElement(writer, (xmlChar*)"period", STRTOXML(XmlUtils::convertToXML<int>(period)));
     xmlTextWriterWriteElement(writer, (xmlChar*)"offset", STRTOXML(XmlUtils::convertToXML<int>(offset)));
-    xmlTextWriterWriteElement(writer, (xmlChar*)"matrixSize", STRTOXML(XmlUtils::convertToXML<int>(matrixSize)));
     xmlTextWriterWriteElement(writer, (xmlChar*)"pkg", STRTOXML(XmlUtils::convertToXML<string>(pkg)));
+
+    xmlTextWriterStartElement(writer, (xmlChar*)"config");
+    xmlTextWriterWriteElement(writer, (xmlChar*)"matrixSize", STRTOXML(XmlUtils::convertToXML<int>(config.matrixSize)));
+    xmlTextWriterEndElement(writer);
     return 0;
   }
 
