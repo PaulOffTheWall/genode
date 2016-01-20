@@ -1,3 +1,4 @@
 TARGET = hey
 SRC_CC = main.cc
-LIBS = base
+# libc to enforce dynamically linked binary
+LIBS = base libc

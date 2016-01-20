@@ -19,8 +19,17 @@ namespace tmssim {
         int matrixSize;
     };
 
-    PeriodicLoadTask(unsigned int _id, int _period, int _et, int _ct,
-    UtilityCalculator* __uc, UtilityAggregator* __ua, int o=0, int _prio=1, const GenodeConfig& config = GenodeConfig());
+    PeriodicLoadTask(
+        unsigned int id,
+        int period,
+        int executionTime,
+        int relDeadline,
+        UtilityCalculator* utilityCalculator,
+        UtilityAggregator* utilityAggregator,
+        int offset = 0,
+        int priority = 1,
+        const GenodeConfig& config = GenodeConfig()
+    );
     PeriodicLoadTask(const PeriodicLoadTask& rhs);
 
     virtual std::ostream& print(std::ostream& ost) const;
@@ -53,8 +62,8 @@ namespace tmssim {
      * @}
      */
 
-    int getPeriod() const { return period; }
-    int getOffset() const { return offset; }
+    int getPeriod() const { return _period; }
+    int getOffset() const { return _offset; }
 
   protected:
     virtual int startHook(int now);
@@ -70,11 +79,11 @@ namespace tmssim {
 
     virtual char getShortId(void) const;
 
-    int period;
-    int offset; ///< offset for periodic activation
-    GenodeConfig config;
-    double lastUtility;
-    double historyUtility;
+    int _period;
+    int _offset; ///< offset for periodic activation
+    GenodeConfig _config;
+    double _lastUtility;
+    double _historyUtility;
   };
   
 } // NS tmssim

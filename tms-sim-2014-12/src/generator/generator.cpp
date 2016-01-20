@@ -59,8 +59,9 @@ int main(int argc, char*argv[]) {
             int et = rand() % 5 + 1;
             int ct = et;
             int period = rand() % 20 + 1;
-            int prio = 1;
             int offset = 0;
+            int prio = 1;
+
             PeriodicLoadTask::GenodeConfig config;
             config.matrixSize =rand() % 50 + 1;
 

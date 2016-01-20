@@ -8,6 +8,8 @@
 #include <timer_session/connection.h>
 
 int main(void) {
+	PDBG("tumatmul: Hello!\n");
+
 	int m, c, d, k, sum = 0;
 	int first[100][100], second[100][100], multiply[100][100];
 

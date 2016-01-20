@@ -60,7 +60,6 @@ set config {
 			<listen-address>192.168.0.14</listen-address>
 			<port>3001</port>
 			<launchpad-quota>73400320</launchpad-quota>
-			<task-quota>4194304</task-quota>
 		</config>
 	</start>}
 

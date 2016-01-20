@@ -17,28 +17,30 @@ namespace tmssim {
 
   static const string ELEM_NAME = "periodictask";
 
-  PeriodicLoadTask::PeriodicLoadTask(unsigned int _id,
-                                     int _period,
-                                     int _et,
-                                     int _ct,
-                                     UtilityCalculator* __uc,
-                                     UtilityAggregator* __ua,
-                                     int o,
-                                     int _prio,
-                                     const GenodeConfig& config)
-    : Task(_id, _et, _ct, __uc, __ua, _prio),
-      period(_period), offset(o), lastUtility(0), historyUtility(1), config(config) {
+  PeriodicLoadTask::PeriodicLoadTask(
+        unsigned int id,
+        int period,
+        int executionTime,
+        int relDeadline,
+        UtilityCalculator* utilityCalculator,
+        UtilityAggregator* utilityAggregator,
+        int offset,
+        int priority,
+        const GenodeConfig& config
+  ) :
+    Task(id, executionTime, relDeadline, utilityCalculator, utilityAggregator, priority),
+    _period(period), _offset(offset), _lastUtility(0.0), _historyUtility(1.0), _config(config)
+  {
   }
-  
 
   PeriodicLoadTask::PeriodicLoadTask(const PeriodicLoadTask& rhs)
     : Task(rhs),
-      period(rhs.period), offset(0), lastUtility(0), historyUtility(1) {
+      _period(rhs._period), _offset(0), _lastUtility(0), _historyUtility(1) {
   }
   
   
   int PeriodicLoadTask::startHook(int now) {
-    return now + offset;
+    return now + _offset;
   }
   
   
@@ -48,12 +50,12 @@ namespace tmssim {
   
   
   int PeriodicLoadTask::getNextActivationOffset(int now) {
-    return period;
+    return _period;
   }
   
   
   bool PeriodicLoadTask::completionHook(Job *job, int now) {
-    lastUtility = calcExecValue(job, now); // TODO: REMOVE
+    _lastUtility = calcExecValue(job, now); // TODO: REMOVE
     advanceHistory();
     delete job;
     return true;
@@ -61,7 +63,7 @@ namespace tmssim {
   
   
   bool PeriodicLoadTask::cancelHook(Job *job) {
-    lastUtility = 0; // REMOVE
+    _lastUtility = 0; // REMOVE
     advanceHistory();
     delete job;
     return true;
@@ -69,19 +71,19 @@ namespace tmssim {
   
   
   std::ostream& PeriodicLoadTask::print(std::ostream& ost) const {
-    ost << getIdString() << "(" << period << "/" << executionTime << "/" << absDeadline << ")";
-    ost << " [" << lastUtility << ";" << historyUtility << "]";
+    ost << getIdString() << "(" << _period << "/" << executionTime << "/" << absDeadline << ")";
+    ost << " [" << _lastUtility << ";" << _historyUtility << "]";
     return ost;
   }
   
   
   double PeriodicLoadTask::getLastExecValue(void) const {
-    return lastUtility;
+    return _lastUtility;
   }
   
   
   double PeriodicLoadTask::getHistoryValue(void) const {
-    return historyUtility;
+    return _historyUtility;
   }
   
   
@@ -96,17 +98,17 @@ namespace tmssim {
 
 
   double PeriodicLoadTask::calcHistoryValue(const Job *job, int complTime) const {
-    return (historyUtility + calcExecValue(job, complTime)) / 2;
+    return (_historyUtility + calcExecValue(job, complTime)) / 2;
   }
   
   
   double PeriodicLoadTask::calcFailHistoryValue(const Job *job) const {
-    return historyUtility/2;
+    return _historyUtility/2;
   }
   
   
   void PeriodicLoadTask::advanceHistory(void) {
-    historyUtility = (historyUtility + lastUtility) / 2;
+    _historyUtility = (_historyUtility + _lastUtility) / 2;
   }
   
   
@@ -142,14 +144,20 @@ namespace tmssim {
   int PeriodicLoadTask::writeData(xmlTextWriterPtr writer) {
     string tasks[] = {"hey", "namaste", "tumatmul"};
     string pkg = tasks[ rand() % 3 ]; // size of tasks array
+    int quota = 2 * 1024 * 1024;
+    if (pkg == "tumatmul")
+    {
+      quota = 8 * 1024 * 1024;
+    }
 
     Task::writeData(writer);
-    xmlTextWriterWriteElement(writer, (xmlChar*)"period", STRTOXML(XmlUtils::convertToXML<int>(period)));
-    xmlTextWriterWriteElement(writer, (xmlChar*)"offset", STRTOXML(XmlUtils::convertToXML<int>(offset)));
+    xmlTextWriterWriteElement(writer, (xmlChar*)"period", STRTOXML(XmlUtils::convertToXML<int>(_period)));
+    xmlTextWriterWriteElement(writer, (xmlChar*)"offset", STRTOXML(XmlUtils::convertToXML<int>(_offset)));
+    xmlTextWriterWriteElement(writer, (xmlChar*)"quota", STRTOXML(XmlUtils::convertToXML<int>(quota)));
     xmlTextWriterWriteElement(writer, (xmlChar*)"pkg", STRTOXML(XmlUtils::convertToXML<string>(pkg)));
 
     xmlTextWriterStartElement(writer, (xmlChar*)"config");
-    xmlTextWriterWriteElement(writer, (xmlChar*)"matrixSize", STRTOXML(XmlUtils::convertToXML<int>(config.matrixSize)));
+    xmlTextWriterWriteElement(writer, (xmlChar*)"matrixSize", STRTOXML(XmlUtils::convertToXML<int>(_config.matrixSize)));
     xmlTextWriterEndElement(writer);
     return 0;
   }

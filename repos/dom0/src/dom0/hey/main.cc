@@ -3,7 +3,7 @@
 
 int main(void)
 {
-	PINF("hey: Hello!\n");
+	PDBG("hey: Hello!\n");
 	Timer::Connection timer;
 	for (;;)
 	{

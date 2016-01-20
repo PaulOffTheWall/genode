@@ -1,6 +1,7 @@
 #include "dom0_server.h"
 
 #include <cstring>
+#include <vector>
 
 #include <base/printf.h>
 #include <lwip/genode.h>
@@ -86,17 +87,17 @@ void Dom0Server::serve()
 		{
 			PINF("Ready to receive task description.\n");
 
-			// Get JSON size.
-			int jsonSize;
-			NETCHECK_LOOP(receiveInt32_t(jsonSize));
-			std::vector<char> json(jsonSize);
-			PINF("Ready to receive json of size %d.\n", jsonSize);
+			// Get XML size.
+			int xmlSize;
+			NETCHECK_LOOP(receiveInt32_t(xmlSize));
+			std::vector<char> xml(xmlSize);
+			PINF("Ready to receive XML of size %d.\n", xmlSize);
 
-			// Get JSON file.
-			NETCHECK_LOOP(receiveData(json.data(), json.size()));
-			PINF("Received JSON %s", json.data());
+			// Get XML file.
+			NETCHECK_LOOP(receiveData(xml.data(), xml.size()));
+			PINF("Received XML:\n%s", xml.data());
 			_taskMngr.clearTasks();
-			_taskMngr.addTasks(json.data());
+			_taskMngr.addTasks(xml.data());
 		}
 		else if (message == SEND_BINARIES)
 		{
@@ -112,9 +113,8 @@ void Dom0Server::serve()
 			{
 				// Get binary name.
 				PINF("Waiting for binary %d\n", i);
-				char name[9];
-				NETCHECK_LOOP(receiveData(name, 8));
-				name[8]='\0';
+				char name[16];
+				NETCHECK_LOOP(receiveData(name, 16));
 				std::string binaryName(name);
 
 				// Get binary size.

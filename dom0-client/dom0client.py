@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 
 import socket
-import xmltodict
-import json
 import code
 import struct
 import magicnumbers
 import os
+import re
 
 class Dom0Session:
 	"""Manager for a connection to the dom0 server."""
@@ -21,32 +20,25 @@ class Dom0Session:
 		print('Connected.')
 
 	def readTasks(self, tasksFile='tasks.xml'):
-		"""Read XML file, discard meta data, and purge invalid tasks."""
+		"""Read XML file and enumerate binaries."""
 		# Read XML file and discard meta data.
-		tasks = xmltodict.parse(open(tasksFile, 'rb'))
-		tasks = tasks['taskset']['periodictask']
+		self.tasks = open(tasksFile, 'rb').read()
+		tasksAscii = self.tasks.decode('ascii')
 
-		# Make sure we have an array of descriptions.
-		if not isinstance(tasks, list):
-			tasks = [tasks]
+		# Enumerate binaries.
+		self.binaries = re.findall('<\s*pkg\s*>\s*(.+)\s*<\s*/pkg\s*>', tasksAscii)
+		self.binaries = list(set(self.binaries))
 
-		# Enumerate binaries and purge obsolete entries.
-		self.binaries = []
-		for task in tasks:
-			if task['pkg'] not in self.binaries:
-				self.binaries.append(task['pkg'])
-			del task['ucfirmrt']
-			del task['uawmean']
-
-		# Convert to JSON file.
-		self.tasks = json.dumps(tasks)
+		# Genode XML parser can't handle a lot of header things, so skip them.
+		firstNode = re.search('<\w+', tasksAscii)
+		self.tasks = self.tasks[firstNode.start():]
 
 	def sendDescs(self):
 		"""Send task descriptions to the dom0 server."""
 		meta = struct.pack('II', magicnumbers.task_desc, len(self.tasks))
 		print('Sending tasks description.')
 		self.conn.send(meta)
-		self.conn.send(self.tasks.encode('ascii'))
+		self.conn.send(self.tasks)
 
 	def sendBins(self):
 		"""Send binary files to the dom0 server."""
@@ -58,7 +50,7 @@ class Dom0Session:
 			print('Sending {}.'.format(name))
 			file = open(name, 'rb').read()
 			size = os.stat(name).st_size
-			meta = struct.pack('8sI', name.encode('ascii'), size)
+			meta = struct.pack('15scI', name.encode('ascii'), b'\0', size)
 			self.conn.send(meta)
 			self.conn.send(file)
 
