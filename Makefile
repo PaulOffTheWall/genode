@@ -9,38 +9,33 @@ TOOLCHAIN_BUILD_DIR ?= $(BUILD_DIR)/toolchain-$(TOOLCHAIN_TARGET)
 GENODE_BUILD_DIR    ?= $(BUILD_DIR)/genode-$(GENODE_TARGET)
 BUILD_CONF           = $(GENODE_BUILD_DIR)/etc/build.conf
 
-.PHONY: all toolchain ports foc libports dom0 genode_build_dir clean vde
-
 all: tms descs toolchain ports platform
 
-platform: genode_build_dir tasks dom0
 
+# ================================================================
+# TMS tool required for task descriptions.
 tms:
 	@mkdir -p tms-sim-2014-12/build
 	@cd tms-sim-2014-12/build && ../build-local.sh .. && $(MAKE) && $(MAKE) install
 
 descs:
 	@tms-sim-2014-12/build/bin/generator -o dom0-client/tasks.xml -n 4
+#
+# ================================================================
 
-tasks: hey namaste tumatmul
 
-hey:
-	$(MAKE) -C $(GENODE_BUILD_DIR) dom0/hey
-	cp $(GENODE_BUILD_DIR)/dom0/hey/hey dom0-client/
-
-namaste:
-	$(MAKE) -C $(GENODE_BUILD_DIR) dom0/namaste
-	cp $(GENODE_BUILD_DIR)/dom0/namaste/namaste dom0-client/
-
-tumatmul:
-	$(MAKE) -C $(GENODE_BUILD_DIR) dom0/tumatmul
-	cp $(GENODE_BUILD_DIR)/dom0/tumatmul/tumatmul dom0-client/
-
+# ================================================================
+# Genode toolchain. Only needs to be done once per target (x86/arm).
 toolchain:
 	mkdir -p $(TOOLCHAIN_BUILD_DIR)
 	cd $(TOOLCHAIN_BUILD_DIR);\
 	../../tool/tool_chain $(TOOLCHAIN_TARGET)
+#
+# ================================================================
 
+
+# ================================================================
+# Download Genode external sources. Only needs to be done once per system.
 ports: foc libports
 
 foc:
@@ -48,15 +43,53 @@ foc:
 
 libports:
 	$(MAKE) -C repos/libports prepare
+#
+# ================================================================
+
+
+# ================================================================
+# Genode build process. Rebuild subtargets as needed.
+platform: genode_build_dir tasks dom0
 
 genode_build_dir:
 	tool/create_builddir $(GENODE_TARGET) BUILD_DIR=$(GENODE_BUILD_DIR)
 	printf 'REPOSITORIES += $$(GENODE_DIR)/repos/libports\n' >> $(BUILD_CONF)
 	printf 'REPOSITORIES += $$(GENODE_DIR)/repos/dom0\n' >> $(BUILD_CONF)
 
-dom0:
-	$(MAKE) -j10 -C $(GENODE_BUILD_DIR) run/dom0
+tasks: hey namaste tumatmul
 
+hey:
+	$(MAKE) -j10 -C $(GENODE_BUILD_DIR) dom0/hey
+	cp $(GENODE_BUILD_DIR)/dom0/hey/hey dom0-client/
+
+namaste:
+	$(MAKE) -j10 -C $(GENODE_BUILD_DIR) dom0/namaste
+	cp $(GENODE_BUILD_DIR)/dom0/namaste/namaste dom0-client/
+
+tumatmul:
+	$(MAKE) -j10 -C $(GENODE_BUILD_DIR) dom0/tumatmul
+	cp $(GENODE_BUILD_DIR)/dom0/tumatmul/tumatmul dom0-client/
+
+dom0:
+	$(MAKE) -j10 -C $(GENODE_BUILD_DIR) dom0/server
+
+# Delete build directory for all target systems. In some cases, subfolders in the contrib directory might be corrupted. Remove manually and re-prepare if necessary.
+clean:
+	rm -rf $(BUILD_DIR)
+#
+# ================================================================
+
+
+# ================================================================
+# Run Genode with an active dom0 server.
+run:
+	$(MAKE) -j10 -C $(GENODE_BUILD_DIR) run/dom0
+#
+# ================================================================
+
+
+# ================================================================
+# VDE setup. Do once per system session. DHCP is optional.
 vde: vde-stop
 	@vde_switch -d -s /tmp/switch1
 	@sudo vde_tunctl -u $(USER) -t tap0
@@ -75,7 +108,7 @@ dhcp: dhcp-stop
 dhcp-stop:
 	@-pkill slirpvde
 
+# Cleanup network shenanigans.
 clean-network: dhcp-stop vde-stop
-
-clean:
-	rm -rf $(BUILD_DIR)
+#
+# ================================================================
