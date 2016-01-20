@@ -1,5 +1,6 @@
 #include "config.h"
 
+#include <os/config.h>
 #include <nic/packet_allocator.h>
 #include <cstring>
 

@@ -85,7 +85,7 @@ void Dom0Server::serve()
 		NETCHECK_LOOP(receiveInt32_t(message));
 		if (message == TASK_DESC)
 		{
-			PINF("Ready to receive task description.\n");
+			PDBG("Ready to receive task description.\n");
 
 			// Get XML size.
 			int xmlSize;
@@ -95,13 +95,13 @@ void Dom0Server::serve()
 
 			// Get XML file.
 			NETCHECK_LOOP(receiveData(xml.data(), xml.size()));
-			PINF("Received XML:\n%s", xml.data());
+			PDBG("Received XML:\n%s", xml.data());
 			_taskMngr.clearTasks();
 			_taskMngr.addTasks(xml.data());
 		}
 		else if (message == SEND_BINARIES)
 		{
-			PINF("Ready to receive binaries.\n");
+			PDBG("Ready to receive binaries.\n");
 
 			// Get number of binaries to receive.
 			int numBinaries = 0;
@@ -112,7 +112,6 @@ void Dom0Server::serve()
 			for (int i = 0; i < numBinaries; i++)
 			{
 				// Get binary name.
-				PINF("Waiting for binary %d\n", i);
 				char name[16];
 				NETCHECK_LOOP(receiveData(name, 16));
 				std::string binaryName(name);

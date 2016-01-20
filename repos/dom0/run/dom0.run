@@ -59,7 +59,7 @@ set config {
 			<dhcp>no</dhcp>
 			<listen-address>192.168.0.14</listen-address>
 			<port>3001</port>
-			<launchpad-quota>73400320</launchpad-quota>
+			<launchpad-quota>70M</launchpad-quota>
 		</config>
 	</start>}
 

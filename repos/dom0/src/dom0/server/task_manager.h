@@ -31,7 +31,7 @@ protected:
 		unsigned int priority;
 		unsigned int period;
 		unsigned int offset;
-		unsigned int quota;
+		Genode::Number_of_bytes quota;
 		char binaryName[16];
 		Genode::Attached_ram_dataspace config;
 	};

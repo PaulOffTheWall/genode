@@ -1,7 +1,7 @@
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
 
-#include <os/config.h>
+#include <util/xml_node.h>
 
 // Get XML node value (not attribute) if it exists.
 template <typename T>
@@ -26,7 +26,7 @@ struct Config
 	char networkMask[16];
 	char networkGateway[16];
 	unsigned int port;
-	unsigned int launchpadQuota;
+	Genode::Number_of_bytes launchpadQuota;
 
 	static const Config& get();
 };

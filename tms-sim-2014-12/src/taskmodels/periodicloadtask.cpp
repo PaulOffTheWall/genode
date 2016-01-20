@@ -144,16 +144,16 @@ namespace tmssim {
   int PeriodicLoadTask::writeData(xmlTextWriterPtr writer) {
     string tasks[] = {"hey", "namaste", "tumatmul"};
     string pkg = tasks[ rand() % 3 ]; // size of tasks array
-    int quota = 2 * 1024 * 1024;
+    string quota = "2M";
     if (pkg == "tumatmul")
     {
-      quota = 8 * 1024 * 1024;
+      quota = "8M";
     }
 
     Task::writeData(writer);
     xmlTextWriterWriteElement(writer, (xmlChar*)"period", STRTOXML(XmlUtils::convertToXML<int>(_period)));
     xmlTextWriterWriteElement(writer, (xmlChar*)"offset", STRTOXML(XmlUtils::convertToXML<int>(_offset)));
-    xmlTextWriterWriteElement(writer, (xmlChar*)"quota", STRTOXML(XmlUtils::convertToXML<int>(quota)));
+    xmlTextWriterWriteElement(writer, (xmlChar*)"quota", STRTOXML(XmlUtils::convertToXML<string>(quota)));
     xmlTextWriterWriteElement(writer, (xmlChar*)"pkg", STRTOXML(XmlUtils::convertToXML<string>(pkg)));
 
     xmlTextWriterStartElement(writer, (xmlChar*)"config");
