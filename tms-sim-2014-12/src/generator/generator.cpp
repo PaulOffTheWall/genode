@@ -63,7 +63,7 @@ int main(int argc, char*argv[]) {
             int prio = 1;
 
             PeriodicLoadTask::GenodeConfig config;
-            config.matrixSize =rand() % 50 + 1;
+            config.arg1 = rand() % 50000 + 100000;
 
             taskset.push_back(new PeriodicLoadTask(taskNo,
                                                    period,

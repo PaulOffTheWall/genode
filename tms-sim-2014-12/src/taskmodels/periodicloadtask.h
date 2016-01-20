@@ -16,7 +16,7 @@ namespace tmssim {
   public:
     struct GenodeConfig
     {
-        int matrixSize;
+        int arg1;
     };
 
     PeriodicLoadTask(

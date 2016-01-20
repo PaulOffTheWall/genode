@@ -157,7 +157,7 @@ namespace tmssim {
     xmlTextWriterWriteElement(writer, (xmlChar*)"pkg", STRTOXML(XmlUtils::convertToXML<string>(pkg)));
 
     xmlTextWriterStartElement(writer, (xmlChar*)"config");
-    xmlTextWriterWriteElement(writer, (xmlChar*)"matrixSize", STRTOXML(XmlUtils::convertToXML<int>(_config.matrixSize)));
+    xmlTextWriterWriteElement(writer, (xmlChar*)"arg1", STRTOXML(XmlUtils::convertToXML<int>(_config.arg1)));
     xmlTextWriterEndElement(writer);
     return 0;
   }

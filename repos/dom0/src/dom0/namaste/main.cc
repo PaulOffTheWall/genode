@@ -8,6 +8,6 @@ int main(void)
 	for (;;)
 	{
 		PINF("namaste\n");
-		timer.msleep(200);
+		timer.msleep(2000);
 	}
 }
