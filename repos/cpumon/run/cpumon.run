@@ -1,0 +1,97 @@
+#
+# Build
+#
+
+set build_components {
+	core init cpumon
+	drivers/timer
+	server/report_rom
+	app/trace_subject_reporter
+}
+
+build $build_components
+
+create_boot_directory
+
+#
+# Generate config
+#
+
+set config {
+<config verbose="yes">
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="RAM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="CAP"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+		<service name="SIGNAL"/>
+		<service name="TRACE"/>
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+
+	<start name="timer">
+		<resource name="RAM" quantum="1M"/>
+		<provides> <service name="Timer"/> </provides>
+	</start>
+
+	<start name="cpumon">
+		<resource name="RAM" quantum="4M"/>
+		<provides><service name="cpumon"/></provides>
+	</start>
+
+	<start name="report_rom">
+		<resource name="RAM" quantum="4M"/>
+		<provides>
+			<service name="Report"/>
+			<service name="ROM"/>
+		</provides>
+		<config>
+			<rom>
+				<policy label="cpu_load_display -> trace_subjects"
+				        report="trace_subject_reporter -> trace_subjects"/>
+			</rom>
+		</config>
+	</start>
+
+	<start name="trace_subject_reporter" >
+		<resource name="RAM" quantum="6M"/>
+		<config period_ms="500">
+			<report activity="yes" affinity="yes"/>
+		</config>
+		<route>
+			<any-service> <child name="report_rom"/> <any-child/> <parent/> </any-service>
+		</route>
+	</start>
+}
+
+
+append config {
+</config>
+}
+
+install_config $config
+
+#
+# Boot image
+#
+
+set boot_modules {
+	core init cpumon
+	timer
+	report_rom
+	trace_subject_reporter
+}
+
+build_boot_image $boot_modules
+
+append qemu_args " -nographic "
+
+run_genode_until forever
