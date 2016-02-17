@@ -41,4 +41,3 @@ protected:
 	struct sockaddr_in targetSockaddr_in;
 
 };
-

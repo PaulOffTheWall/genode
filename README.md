@@ -52,10 +52,4 @@ This port of dom0 supports DHCP. For this, change the `<dhcp>` field in `dom0.ru
 ### dom0 Client
 The python script Dom0Client provides a simple class to communicate with Genode's dom0 server.
 
-In order to run it you need the module `xmltodict`:
-
-`sudo apt-get install python3-pip`
-
-`sudo python3 -m pip install xmltodict`
-
-Run the script and use `session`'s functions `sendDescs`, `sendTascs`, and `start` to communicate with the Genode server.
+The script will attempt connection on startup. Further instructions are provided at run-time.
