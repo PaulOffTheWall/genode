@@ -270,8 +270,7 @@ unsigned long long Platform_thread::execution_time() const
 {
 	unsigned long long time = 0;
 
-	if (_utcb)
-	{
+	if (_utcb) {
 		l4_thread_stats_time(_thread.local.dst());
 		time = *(l4_kernel_clock_t*)&l4_utcb_mr()->mr[0];
 	}
