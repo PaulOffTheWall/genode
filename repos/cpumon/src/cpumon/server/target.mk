@@ -1,3 +1,3 @@
 TARGET = cpumon
 SRC_CC = main.cc
-LIBS = base config
+LIBS += base config stdcxx

@@ -2,23 +2,24 @@
 # Build
 #
 
+if {[have_spec hw_odroid_xu]} {
+	puts "Run script not supported on this platform."; exit 0 }
+
 set build_components {
-	core init cpumon
+	core init
 	drivers/timer
-	server/report_rom
-	app/trace_subject_reporter
+	cpumon
+	lib/trace/policy/rpc_name
 }
 
 build $build_components
-
-create_boot_directory
 
 #
 # Generate config
 #
 
-set config {
-<config verbose="yes">
+append config {
+<config prio_levels="2">
 	<parent-provides>
 		<service name="ROM"/>
 		<service name="RAM"/>
@@ -35,63 +36,45 @@ set config {
 	</parent-provides>
 	<default-route>
 		<any-service> <parent/> <any-child/> </any-service>
-	</default-route>
+	</default-route>}
 
+append config {
 	<start name="timer">
 		<resource name="RAM" quantum="1M"/>
-		<provides> <service name="Timer"/> </provides>
+		<provides><service name="Timer"/></provides>
 	</start>
 
 	<start name="cpumon">
-		<resource name="RAM" quantum="4M"/>
+		<resource name="RAM" quantum="6M"/>
 		<provides><service name="cpumon"/></provides>
 	</start>
 
-	<start name="report_rom">
-		<resource name="RAM" quantum="4M"/>
-		<provides>
-			<service name="Report"/>
-			<service name="ROM"/>
-		</provides>
-		<config>
-			<rom>
-				<policy label="cpu_load_display -> trace_subjects"
-				        report="trace_subject_reporter -> trace_subjects"/>
-			</rom>
-		</config>
-	</start>
-
-	<start name="trace_subject_reporter" >
-		<resource name="RAM" quantum="6M"/>
-		<config period_ms="500">
-			<report activity="yes" affinity="yes"/>
-		</config>
-		<route>
-			<any-service> <child name="report_rom"/> <any-child/> <parent/> </any-service>
-		</route>
-	</start>
-}
-
-
-append config {
-</config>
-}
+</config>}
 
 install_config $config
 
+
 #
-# Boot image
+# Boot modules
 #
 
+# generic modules
 set boot_modules {
-	core init cpumon
+	core init
+	ld.lib.so
+	libc.lib.so
+	libm.lib.so
+	stdcxx.lib.so
 	timer
-	report_rom
-	trace_subject_reporter
+	cpumon
+	rpc_name
 }
+
+# platform-specific modules
 
 build_boot_image $boot_modules
 
-append qemu_args " -nographic "
+append qemu_args " -m 256 -nographic"
+append qemu_args " -smp 4,cores=4 "
 
 run_genode_until forever

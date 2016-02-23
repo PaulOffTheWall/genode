@@ -44,3 +44,8 @@ The provided Makefile creates the following directories:
 
 ### VDE
 The VDE network can be set up using `make vde`. VDE functionality requires a manual build of QEMU with VDE support enabled. Reset the VDE network using `make vde-stop`.
+
+### Fine-grained CPU time
+The Fiasco.OC kernel by default only returns timing information at a resolution of 1ms. Granularity can be increased by changing line 51 of `build/genode-TARGET/kernel/fiasco.oc/globalconfig.out` to
+
+`CONFIG_FINE_GRAINED_CPUTIME=y`
