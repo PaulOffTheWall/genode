@@ -213,7 +213,11 @@ Launchpad_child *Launchpad::start_child(const char *filename,
 	/* lookup executable elf binary */
 	Dataspace_capability  file_cap;
 	Rom_session_capability rom_cap;
-	if (binary_ds == Genode::Dataspace_capability())
+	if (binary_ds.valid())
+	{
+		file_cap = binary_ds;
+	}
+	else
 	{
 		/* invalid dataspace, look up in file */
 		try {
@@ -230,10 +234,6 @@ Launchpad_child *Launchpad::start_child(const char *filename,
 			printf("Error: Could not access file \"%s\" from ROM service.\n", filename);
 			return 0;
 		}
-	}
-	else
-	{
-		file_cap = binary_ds;
 	}
 
 	/* create ram session for child with some of our own quota */
