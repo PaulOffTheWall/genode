@@ -9,10 +9,11 @@ set build_components {
 	core init
 	drivers/timer
 	cpumon
-	lib/trace/policy/rpc_name
 }
 
 build $build_components
+
+create_boot_directory
 
 #
 # Generate config
@@ -67,7 +68,6 @@ set boot_modules {
 	stdcxx.lib.so
 	timer
 	cpumon
-	rpc_name
 }
 
 # platform-specific modules
