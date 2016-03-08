@@ -1,30 +1,13 @@
 #pragma once
 
-//these numbers are used in network communication
-//to identify the type of the payload
+// Packet contains task descriptions as XML. uint32_t after tag indicates size in bytes.
+#define SEND_DESCS 0xDE5
 
-//client wants to send control messages
-#define CONTROL 0xC047201
-//client wants to send Task Description
-#define TASK_DESC 0xDE5
-//client wants to send Task Binary
+// Multiple binaries are to be sent. uint32_t after tag indicates number of binaries. Each binary packet contains another leading uint32_t indicating binary size.
 #define SEND_BINARIES 0xDE5F11E
-//client wants to start tasks in the queue
-#define START 0x514DE5
-//client wants to send a LUA command
-#define LUA 0x10A
 
-//Possible answers to LUA commands
-#define LUA_OK 0x10A900D
-#define LUA_ERROR 0x10ABAD
-
-//Control messages:
-//client wants to send a binary
-#define SEND_BINARY 0xF11E
-//server tells client that he's ready to receive
+// Binary received, send next one.
 #define GO_SEND 0x90
-//server tells client that he received the binary
-#define OK_RECEIVED 0x900D
 
-//#define CLOSE 0xC105E
-//#define CLOSE2 0xC105E2
+// Start queued tasks.
+#define START 0x514DE5

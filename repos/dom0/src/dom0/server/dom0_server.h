@@ -18,7 +18,7 @@ public:
 
 private:
 	int _listenSocket;
-	struct sockaddr_in in_addr;
-	sockaddr target_addr;
+	struct sockaddr_in _inAddr;
+	sockaddr _targetAddr;
 	TaskManager _taskMngr;
 };

@@ -10,25 +10,24 @@
 #include "communication_magic_numbers.h"
 
 Dom0Server::Dom0Server() :
-	TcpSocket(),
 	_listenSocket(0),
-	in_addr{0},
-	target_addr{0},
-	_taskMngr()
+	_inAddr{0},
+	_targetAddr{0},
+	_taskMngr{}
 {
 	lwip_tcpip_init();
 
 	const Config& config = Config::get();
 
-	in_addr.sin_family = AF_INET;
-	in_addr.sin_port = htons(config.port);
+	_inAddr.sin_family = AF_INET;
+	_inAddr.sin_port = htons(config.port);
 	if (std::strcmp(config.dhcp, "yes") == 0)
 	{
 		if (lwip_nic_init(0, 0, 0, config.bufSize, config.bufSize)) {
 			PERR("We got no IP address!\n");
 			return;
 		}
-		in_addr.sin_addr.s_addr = INADDR_ANY;
+		_inAddr.sin_addr.s_addr = INADDR_ANY;
 	}
 	else
 	{
@@ -36,22 +35,22 @@ Dom0Server::Dom0Server() :
 			PERR("We got no IP address!\n");
 			return;
 		}
-		in_addr.sin_addr.s_addr = inet_addr(config.listenAddress);
+		_inAddr.sin_addr.s_addr = inet_addr(config.listenAddress);
 	}
 
 	if ((_listenSocket = lwip_socket(AF_INET, SOCK_STREAM, 0)) < 0)
 	{
-		PERR("no socket available!");
+		PERR("No socket available!");
 		return;
 	}
-	if (lwip_bind(_listenSocket, (struct sockaddr*)&in_addr, sizeof(in_addr)))
+	if (lwip_bind(_listenSocket, (struct sockaddr*)&_inAddr, sizeof(_inAddr)))
 	{
-		PERR("bind failed!");
+		PERR("Bind failed!");
 		return;
 	}
 	if (lwip_listen(_listenSocket, 5))
 	{
-		PERR("listen failed!");
+		PERR("Listen failed!");
 		return;
 	}
 	PINF("Listening...\n");
@@ -64,17 +63,16 @@ Dom0Server::~Dom0Server()
 
 int Dom0Server::connect()
 {
-	socklen_t len = sizeof(target_addr);
-	targetSocket = lwip_accept(_listenSocket, &target_addr, &len);
-	if (targetSocket < 0)
+	socklen_t len = sizeof(_targetAddr);
+	_targetSocket = lwip_accept(_listenSocket, &_targetAddr, &len);
+	if (_targetSocket < 0)
 	{
 		PWRN("Invalid socket from accept!");
-		return targetSocket;
+		return _targetSocket;
 	}
-	connected = true;
-	sockaddr_in* target_in_addr = (sockaddr_in*)&target_addr;
+	sockaddr_in* target_in_addr = (sockaddr_in*)&_targetAddr;
 	PINF("Got connection from %s\n", inet_ntoa(target_in_addr));
-	return targetSocket;
+	return _targetSocket;
 }
 
 void Dom0Server::serve()
@@ -83,7 +81,7 @@ void Dom0Server::serve()
 	while (true)
 	{
 		NETCHECK_LOOP(receiveInt32_t(message));
-		if (message == TASK_DESC)
+		if (message == SEND_DESCS)
 		{
 			PDBG("Ready to receive task description.\n");
 
@@ -111,6 +109,9 @@ void Dom0Server::serve()
 			// Receive binaries.
 			for (int i = 0; i < numBinaries; i++)
 			{
+				// Client is waiting for ready signal.
+				NETCHECK_LOOP(sendInt32_t(GO_SEND));
+
 				// Get binary name.
 				char name[16];
 				NETCHECK_LOOP(receiveData(name, 16));
@@ -123,9 +124,6 @@ void Dom0Server::serve()
 				// Get binary data.
 				NETCHECK_LOOP(receiveData(_taskMngr.getBinarySpace(binaryName, binarySize), binarySize));
 				PINF("Got binary '%s' of size %d.\n", name, binarySize);
-
-				// Client is waiting for ready signal.
-				NETCHECK_LOOP(sendInt32_t(GO_SEND));
 			}
 		}
 		else if (message == START)
@@ -141,9 +139,8 @@ void Dom0Server::serve()
 
 void Dom0Server::disconnect()
 {
-	lwip_close(targetSocket);
+	lwip_close(_targetSocket);
 	PERR("Target socket closed.\n");
 	lwip_close(_listenSocket);
 	PERR("Server socket closed.\n");
-	connected = false;
 }

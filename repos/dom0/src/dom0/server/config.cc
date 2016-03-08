@@ -46,7 +46,7 @@ Config loadConfig()
 	PINF("\tNetwork mask: %s\n", config.networkMask);
 	PINF("\tNetwork gateway: %s\n", config.networkGateway);
 	PINF("\tPort: %d\n", config.port);
-	PINF("\tLaunchpad Quota: %d\n", config.launchpadQuota);
+	PINF("\tLaunchpad Quota: %d\n", (size_t)config.launchpadQuota);
 
 	return config;
 }

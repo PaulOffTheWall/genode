@@ -7,6 +7,8 @@ import magicnumbers
 import os
 import re
 
+scriptDir = os.path.dirname(os.path.realpath(__file__)) + '/'
+
 class Dom0Session:
 	"""Manager for a connection to the dom0 server."""
 	def __init__(self, host='192.168.0.14', port=3001, tasksFile='tasks.xml'):
@@ -22,7 +24,7 @@ class Dom0Session:
 	def readTasks(self, tasksFile='tasks.xml'):
 		"""Read XML file and enumerate binaries."""
 		# Read XML file and discard meta data.
-		self.tasks = open(tasksFile, 'rb').read()
+		self.tasks = open(scriptDir + tasksFile, 'rb').read()
 		tasksAscii = self.tasks.decode('ascii')
 
 		# Enumerate binaries.
@@ -35,35 +37,35 @@ class Dom0Session:
 
 	def sendDescs(self):
 		"""Send task descriptions to the dom0 server."""
-		meta = struct.pack('II', magicnumbers.task_desc, len(self.tasks))
+		meta = struct.pack('II', magicnumbers.SEND_DESCS, len(self.tasks))
 		print('Sending tasks description.')
 		self.conn.send(meta)
 		self.conn.send(self.tasks)
 
 	def sendBins(self):
 		"""Send binary files to the dom0 server."""
-		meta = struct.pack('II', magicnumbers.send_binaries, len(self.binaries))
+		meta = struct.pack('II', magicnumbers.SEND_BINARIES, len(self.binaries))
 		print('Sending {} binar{}.'.format(len(self.binaries), 'y' if len(self.binaries) == 1 else 'ies'))
 		self.conn.send(meta)
 
 		for name in self.binaries:
+			# Wait for 'go' message.
+			msg = int.from_bytes(self.conn.recv(4), 'little')
+			if msg != magicnumbers.GO_SEND:
+				print('Invalid answer received, aborting: {}'.format(msg))
+				break
+
 			print('Sending {}.'.format(name))
-			file = open(name, 'rb').read()
-			size = os.stat(name).st_size
+			file = open(scriptDir + name, 'rb').read()
+			size = os.stat(scriptDir + name).st_size
 			meta = struct.pack('15scI', name.encode('ascii'), b'\0', size)
 			self.conn.send(meta)
 			self.conn.send(file)
 
-			# Wait for 'go' message.
-			msg = int.from_bytes(self.conn.recv(4), 'little')
-			if msg != magicnumbers.go_send:
-				print('Invalid answer received, aborting: {}'.format(msg))
-				break
-
 	def start(self):
 		"""Send message to start the tasks on the server."""
 		print('Starting tasks on server.')
-		meta = struct.pack('I', magicnumbers.start)
+		meta = struct.pack('I', magicnumbers.START)
 		self.conn.send(meta)
 
 	def startEx(self):
