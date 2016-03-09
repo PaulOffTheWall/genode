@@ -4,16 +4,24 @@
 #include <util/xml_node.h>
 #include <os/attached_ram_dataspace.h>
 #include <launchpad/launchpad.h>
+#include <timer_session/connection.h>
+#include <base/signal.h>
 #include <unordered_map>
 
 // Noncopyable because dataspaces might get invalidated.
 class Task : Genode::Noncopyable
 {
 public:
-	Task(const Genode::Xml_node& node, std::unordered_map<std::string, Genode::Attached_ram_dataspace>& binaries);
+	Task(
+		const Genode::Xml_node& node,
+		std::unordered_map<std::string, Genode::Attached_ram_dataspace>& binaries,
+		Launchpad& launchpad,
+		Genode::Signal_receiver& sigRec);
 	virtual ~Task();
 
-	void start(Launchpad& launchpad);
+	void run();
+	void stop();
+	std::string name() const;
 
 protected:
 	unsigned int _id;
@@ -25,7 +33,20 @@ protected:
 	Genode::Number_of_bytes _quota;
 	char _binaryName[16];
 	Genode::Attached_ram_dataspace _config;
+	std::string _name;
+
 	std::unordered_map<std::string, Genode::Attached_ram_dataspace>& _binaries;
+
+	Launchpad& _launchpad;
+	Launchpad_child* _child;
+
+	Timer::Connection _timer;
+
+	Genode::Signal_receiver& _sigRec;
+	Genode::Signal_dispatcher<Task> _startDispatcher;
+
+	void _makeName();
+	void _start(unsigned);
 
 	static bool _checkDynamicElf(Genode::Attached_ram_dataspace& ds);
 };

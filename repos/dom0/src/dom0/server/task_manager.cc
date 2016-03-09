@@ -27,7 +27,7 @@ void TaskManager::addTasks(const char* const xml)
 
 	const auto fn = [this] (const Genode::Xml_node& node)
 	{
-		_tasks.emplace_back(node, _binaries);
+		_tasks.emplace_back(node, _binaries, _launchpad, _sigRec);
 	};
 	root.for_each_sub_node("periodictask", fn);
 }
@@ -58,6 +58,6 @@ void TaskManager::start()
 	PINF("Starting tasks.\n");
 	for (Task& task : _tasks)
 	{
-		task.start(_launchpad);
+		task.run();
 	}
 }

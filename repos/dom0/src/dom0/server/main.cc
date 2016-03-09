@@ -1,4 +1,6 @@
 #include <base/printf.h>
+#include <timer_session/connection.h>
+#include <base/signal.h>
 #include "dom0_server.h"
 
 int main(int argc, char* argv[])
@@ -9,7 +11,6 @@ int main(int argc, char* argv[])
 
 	while (true)
 	{
-		// Sworn to connect and serve.
 		server.connect();
 		server.serve();
 	}
