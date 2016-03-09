@@ -7,7 +7,7 @@
 
 int main(void)
 {
-	PDBG("tumatmul: Hello!\n");
+	PINF("tumatmul: Hello!\n");
 
 	// Sieve of Erathosthenes
 	unsigned int max = 0;
@@ -36,11 +36,14 @@ int main(void)
 	}
 
 	std::string primesStr;
-	for (int p : primes)
+
+	auto it = primes.crbegin();
+	for (size_t i = 0; i <= 5 && it != primes.crend(); ++i, ++it)
 	{
-		primesStr += std::to_string(p) + ' ';
+		primesStr += std::to_string(*it) + ' ';
 	}
-	PINF("Primes up to %d: %s", max, primesStr.c_str());
+	PINF("Last 5 primes up to %d: %s", max, primesStr.c_str());
+	PINF("Calculated %d primes in total.", primes.size());
 
 	return 0;
 }

@@ -1,5 +1,4 @@
-#ifndef _CONFIG_H_
-#define _CONFIG_H_
+#pragma once
 
 #include <util/xml_node.h>
 
@@ -30,5 +29,3 @@ struct Config
 
 	static const Config& get();
 };
-
-#endif

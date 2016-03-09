@@ -3,11 +3,5 @@
 
 int main(void)
 {
-	PDBG("namaste: Hello!\n");
-	Timer::Connection timer;
-	for (;;)
-	{
-		PINF("namaste\n");
-		timer.msleep(2000);
-	}
+	PINF("namaste: Hello!\n");
 }

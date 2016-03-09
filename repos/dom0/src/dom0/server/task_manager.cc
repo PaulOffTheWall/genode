@@ -1,8 +1,6 @@
 #include "task_manager.h"
 
-#include <cstring>
 #include <base/env.h>
-#include <base/elf.h>
 #include <base/printf.h>
 #include <base/process.h>
 #include <util/xml_node.h>
@@ -29,20 +27,7 @@ void TaskManager::addTasks(const char* const xml)
 
 	const auto fn = [this] (const Genode::Xml_node& node)
 	{
-		const Genode::Xml_node& configNode = node.sub_node("config");
-		_tasks.emplace_back(configNode.size());
-
-		TaskDescription& td = _tasks.back();
-
-		getNodeValue(node, "td", &td.id);
-		getNodeValue(node, "executiontime", &td.executionTime);
-		getNodeValue(node, "criticaltime", &td.criticalTime);
-		getNodeValue(node, "priority", &td.priority);
-		getNodeValue(node, "period", &td.period);
-		getNodeValue(node, "offset", &td.offset);
-		getNodeValue(node, "quota", &td.quota);
-		getNodeValue(node, "pkg", td.binaryName, 16);
-		std::strncpy(td.config.local_addr<char>(), configNode.addr(), configNode.size());
+		_tasks.emplace_back(node, _binaries);
 	};
 	root.for_each_sub_node("periodictask", fn);
 }
@@ -70,29 +55,9 @@ void TaskManager::clearBinaries()
 
 void TaskManager::start()
 {
-	stop();
 	PINF("Starting tasks.\n");
-	for (const TaskDescription& td : _tasks)
+	for (Task& task : _tasks)
 	{
-		startTask(td);
+		task.start(_launchpad);
 	}
-}
-
-void TaskManager::stop()
-{
-}
-
-void TaskManager::startTask(const TaskDescription& td)
-{
-	Genode::Attached_ram_dataspace& ds = _binaries.at(td.binaryName);
-	PINF("Starting %s linked task \"%s\".", _checkDynamicElf(ds) ? "dynamically" : "statically", td.binaryName);
-	_launchpad.start_child(td.binaryName, td.quota, td.config.cap(), ds.cap());
-}
-
-
-bool TaskManager::_checkDynamicElf(Genode::Attached_ram_dataspace& ds)
-{
-	/* read program header */
-	Genode::Elf_binary elf((Genode::addr_t)ds.local_addr<char>());
-	return elf.is_dynamically_linked();
 }
