@@ -22,6 +22,7 @@ public:
 	void run();
 	void stop();
 	std::string name() const;
+	Launchpad_child* child() const;
 
 protected:
 	unsigned int _id;

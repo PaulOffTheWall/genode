@@ -45,6 +45,11 @@ std::string Task::name() const
 	return _name;
 }
 
+Launchpad_child* Task::child() const
+{
+	return _child;
+}
+
 void Task::_makeName()
 {
 	char name[20];

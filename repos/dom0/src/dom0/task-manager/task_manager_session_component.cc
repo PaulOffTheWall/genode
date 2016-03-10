@@ -19,10 +19,11 @@ TaskManagerSessionComponent::~TaskManagerSessionComponent()
 {
 }
 
-void TaskManagerSessionComponent::addTasks(Genode::Ram_dataspace_capability xmlDs)
+void TaskManagerSessionComponent::addTasks(Genode::Ram_dataspace_capability xmlDsCap)
 {
-	const char* xml = (const char*)Genode::env()->rm_session()->attach(xmlDs);
-	PINF("Parsing XML file.");
+	Genode::Rm_session* rm = Genode::env()->rm_session();
+	const char* xml = rm->attach(xmlDsCap);
+	PINF("Parsing XML file:\n%s", xml);
 	Genode::Xml_node root(xml);
 
 	const auto fn = [this] (const Genode::Xml_node& node)
@@ -30,36 +31,32 @@ void TaskManagerSessionComponent::addTasks(Genode::Ram_dataspace_capability xmlD
 		_tasks.emplace_back(node, _binaries, _launchpad, _sigRec);
 	};
 	root.for_each_sub_node("periodictask", fn);
+	rm->detach(xml);
 }
 
-void TaskManagerSessionComponent::clearTasks()
+Genode::Ram_dataspace_capability TaskManagerSessionComponent::binaryDs(Genode::Ram_dataspace_capability nameDsCap, size_t size)
 {
-	_tasks.clear();
-}
-
-char* const TaskManagerSessionComponent::getBinarySpace(const std::string& name, size_t size)
-{
-	PINF("Reserving %d bytes for binary '%s'.\n", size, name.c_str());
+	Genode::Rm_session* rm = Genode::env()->rm_session();
+	const char* name = rm->attach(nameDsCap);
+	PINF("Reserving %d bytes for binary '%s'.\n", size, name);
 	Genode::Ram_session* ram = Genode::env()->ram_session();
 
 	// Hoorray for C++ syntax. This basically forwards ctor arguments, constructing the dataspace in-place so there is no copy or dtor call involved which may invalidate the attached pointer.
 	// Also, emplace returns a <iterator, bool> pair indicating insertion success, so we need .first to get the map iterator and ->second to get the actual dataspace.
 	Genode::Attached_ram_dataspace& ds = _binaries.emplace(std::piecewise_construct, std::make_tuple(name), std::make_tuple(ram, size)).first->second;
-	return ds.local_addr<char>();
-}
-
-void TaskManagerSessionComponent::clearBinaries()
-{
-	_binaries.clear();
+	rm->detach(name);
+	return ds.cap();
 }
 
 void TaskManagerSessionComponent::start()
 {
-	PINF("Starting tasks.\n");
+	Genode::Ram_session* ram = Genode::env()->ram_session();
+	PINF("Starting tasks. Used quota: %d/%d\n", ram->used(), ram->quota());
 	for (Task& task : _tasks)
 	{
 		task.run();
 	}
+	PINF("Tasks started. Used quota: %d/%d\n", ram->used(), ram->quota());
 }
 
 Genode::Number_of_bytes TaskManagerSessionComponent::_launchpadQuota()

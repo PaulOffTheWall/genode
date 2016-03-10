@@ -1,6 +1,7 @@
 #pragma once
 
 #include "tcp_socket.h"
+#include <dom0/task_manager_connection.h>
 
 class Dom0Server : public TcpSocket
 {
@@ -19,4 +20,5 @@ private:
 	int _listenSocket;
 	struct sockaddr_in _inAddr;
 	sockaddr _targetAddr;
+	TaskManagerConnection _taskManager;
 };

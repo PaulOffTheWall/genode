@@ -2,7 +2,7 @@
 #include <cap_session/connection.h>
 #include <base/rpc_server.h>
 #include <base/sleep.h>
-#include <root/component.h>
+#include "task_manager_session_component.h"
 
 int main(int argc, char* argv[])
 {
@@ -15,8 +15,8 @@ int main(int argc, char* argv[])
 	enum { STACK_SIZE = 4096 };
 	static Genode::Rpc_entrypoint ep(&cap, STACK_SIZE, "task-manager-ep");
 
-	// static TaskManager::Root_component tmRoot(&ep, &slicedHeap);
-	// Genode::env()->parent()->announce(ep.manage(&tmRoot));
+	static TaskManagerRootComponent tmRoot(&ep, &slicedHeap);
+	Genode::env()->parent()->announce(ep.manage(&tmRoot));
 
 	Genode::sleep_forever();
 

@@ -6,6 +6,7 @@
 
 #include <base/printf.h>
 #include <lwip/genode.h>
+#include <os/attached_ram_dataspace.h>
 
 #include "config.h"
 #include "communication_magic_numbers.h"
@@ -13,7 +14,8 @@
 Dom0Server::Dom0Server() :
 	_listenSocket(0),
 	_inAddr{0},
-	_targetAddr{0}
+	_targetAddr{0},
+	_taskManager{}
 {
 	lwip_tcpip_init();
 
@@ -88,14 +90,13 @@ void Dom0Server::serve()
 			// Get XML size.
 			int xmlSize;
 			NETCHECK_LOOP(receiveInt32_t(xmlSize));
-			std::vector<char> xml(xmlSize);
+			Genode::Attached_ram_dataspace xmlDs(Genode::env()->ram_session(), xmlSize);
 			PINF("Ready to receive XML of size %d.\n", xmlSize);
 
 			// Get XML file.
-			NETCHECK_LOOP(receiveData(xml.data(), xml.size()));
-			PDBG("Received XML:\n%s", xml.data());
-			// _taskMngr.clearTasks();
-			// _taskMngr.addTasks(xml.data());
+			NETCHECK_LOOP(receiveData(xmlDs.local_addr<char>(), xmlSize));
+			PDBG("Received XML.");
+			_taskManager.addTasks(xmlDs.cap());
 		}
 		else if (message == SEND_BINARIES)
 		{
@@ -113,22 +114,26 @@ void Dom0Server::serve()
 				NETCHECK_LOOP(sendInt32_t(GO_SEND));
 
 				// Get binary name.
-				char name[16];
-				NETCHECK_LOOP(receiveData(name, 16));
-				std::string binaryName(name);
+				Genode::Attached_ram_dataspace nameDs(Genode::env()->ram_session(), 16);
+				NETCHECK_LOOP(receiveData(nameDs.local_addr<char>(), 16));
 
 				// Get binary size.
 				int32_t binarySize = 0;
 				NETCHECK_LOOP(receiveInt32_t(binarySize));
 
 				// Get binary data.
-				// NETCHECK_LOOP(receiveData(_taskMngr.getBinarySpace(binaryName, binarySize), binarySize));
-				PINF("Got binary '%s' of size %d.\n", name, binarySize);
+				Genode::Dataspace_capability binDsCap = _taskManager.binaryDs(nameDs.cap(), binarySize);
+				Genode::Rm_session* rm = Genode::env()->rm_session();
+				char* bin = (char*)rm->attach(binDsCap);
+				NETCHECK_LOOP(receiveData(bin, binarySize));
+
+				PINF("Got binary '%s' of size %d.\n", nameDs.local_addr<char>(), binarySize);
+				rm->detach(bin);
 			}
 		}
 		else if (message == START)
 		{
-			// _taskMngr.start();
+			_taskManager.start();
 		}
 		else
 		{

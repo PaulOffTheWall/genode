@@ -6,21 +6,19 @@
 #include <launchpad/launchpad.h>
 #include <base/signal.h>
 #include <util/string.h>
+#include <root/component.h>
 #include <dom0/task_manager_session.h>
 #include "task.h"
 
-class TaskManagerSessionComponent : Genode::Rpc_object<TaskManagerSession>
+class TaskManagerSessionComponent : public Genode::Rpc_object<TaskManagerSession>
 {
 public:
 	TaskManagerSessionComponent();
 	virtual ~TaskManagerSessionComponent();
 
-	void addTasks(Genode::Ram_dataspace_capability xmlDs);
-	void clearTasks();
-	char* const getBinarySpace(const std::string& name, size_t size);
-	void clearBinaries();
+	void addTasks(Genode::Ram_dataspace_capability xmlDsCap);
+	Genode::Ram_dataspace_capability binaryDs(Genode::Ram_dataspace_capability nameDsCap, size_t size);
 	void start();
-	void stop();
 
 protected:
 	std::unordered_map<std::string, Genode::Attached_ram_dataspace> _binaries;
@@ -31,4 +29,21 @@ protected:
 	Genode::Signal_receiver _sigRec;
 
 	static Genode::Number_of_bytes _launchpadQuota();
+};
+
+class TaskManagerRootComponent : public Genode::Root_component<TaskManagerSessionComponent>
+{
+public:
+	TaskManagerRootComponent(Genode::Rpc_entrypoint *ep, Genode::Allocator *allocator) :
+		Genode::Root_component<TaskManagerSessionComponent>(ep, allocator)
+	{
+		PDBG("Creating root component.");
+	}
+
+protected:
+	TaskManagerSessionComponent* _create_session(const char *args)
+	{
+		PDBG("Creating Task Manager session.");
+		return new (md_alloc()) TaskManagerSessionComponent();
+	}
 };

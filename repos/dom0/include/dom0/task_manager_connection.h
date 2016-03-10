@@ -1,14 +1,13 @@
 #pragma once
 
-#include <dom0/client.h>
+#include <dom0/task_manager_client.h>
 #include <base/connection.h>
 
 struct TaskManagerConnection : Genode::Connection<TaskManagerSession>, TaskManagerSessionClient
 {
-	TaskManagerConnection()
-	:
+	TaskManagerConnection() :
 		/* create session */
-		Genode::TaskManagerConnection<TaskManagerSession>(session("foo, ram_quota=4K")),
+		Genode::Connection<TaskManagerSession>(session("foo, ram_quota=4K")),
 
 		/* initialize RPC interface */
 		TaskManagerSessionClient(cap())
