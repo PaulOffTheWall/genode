@@ -73,6 +73,9 @@ tumatmul:
 dom0:
 	$(MAKE) -j10 -C $(GENODE_BUILD_DIR) dom0/server
 
+task-manager:
+	$(MAKE) -j10 -C $(GENODE_BUILD_DIR) dom0/task-manager
+
 # Delete build directory for all target systems. In some cases, subfolders in the contrib directory might be corrupted. Remove manually and re-prepare if necessary.
 clean:
 	rm -rf $(BUILD_DIR)

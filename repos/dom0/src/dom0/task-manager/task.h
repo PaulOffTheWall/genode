@@ -49,4 +49,19 @@ protected:
 	void _start(unsigned);
 
 	static bool _checkDynamicElf(Genode::Attached_ram_dataspace& ds);
+
+	// Get XML node value (not attribute) if it exists.
+	template <typename T>
+	bool _getNodeValue(const Genode::Xml_node& configNode, const char* type, T* out)
+	{
+		if (configNode.has_sub_node(type))
+		{
+			configNode.sub_node(type).value<T>(out);
+			return true;
+		}
+		return false;
+	}
+
+	// Get XML node string value (not attribute) if it exists.
+	bool _getNodeValue(const Genode::Xml_node& configNode, const char* type, char* dst, size_t maxLen);
 };

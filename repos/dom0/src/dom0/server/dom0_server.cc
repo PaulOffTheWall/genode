@@ -2,6 +2,7 @@
 
 #include <cstring>
 #include <vector>
+#include <string>
 
 #include <base/printf.h>
 #include <lwip/genode.h>
@@ -12,8 +13,7 @@
 Dom0Server::Dom0Server() :
 	_listenSocket(0),
 	_inAddr{0},
-	_targetAddr{0},
-	_taskMngr{}
+	_targetAddr{0}
 {
 	lwip_tcpip_init();
 
@@ -94,8 +94,8 @@ void Dom0Server::serve()
 			// Get XML file.
 			NETCHECK_LOOP(receiveData(xml.data(), xml.size()));
 			PDBG("Received XML:\n%s", xml.data());
-			_taskMngr.clearTasks();
-			_taskMngr.addTasks(xml.data());
+			// _taskMngr.clearTasks();
+			// _taskMngr.addTasks(xml.data());
 		}
 		else if (message == SEND_BINARIES)
 		{
@@ -122,13 +122,13 @@ void Dom0Server::serve()
 				NETCHECK_LOOP(receiveInt32_t(binarySize));
 
 				// Get binary data.
-				NETCHECK_LOOP(receiveData(_taskMngr.getBinarySpace(binaryName, binarySize), binarySize));
+				// NETCHECK_LOOP(receiveData(_taskMngr.getBinarySpace(binaryName, binarySize), binarySize));
 				PINF("Got binary '%s' of size %d.\n", name, binarySize);
 			}
 		}
 		else if (message == START)
 		{
-			_taskMngr.start();
+			// _taskMngr.start();
 		}
 		else
 		{

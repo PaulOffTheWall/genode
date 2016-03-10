@@ -5,15 +5,17 @@
 #include <os/attached_ram_dataspace.h>
 #include <launchpad/launchpad.h>
 #include <base/signal.h>
+#include <util/string.h>
+#include <dom0/task_manager_session.h>
 #include "task.h"
 
-class TaskManager
+class TaskManagerSessionComponent : Genode::Rpc_object<TaskManagerSession>
 {
 public:
-	TaskManager();
-	virtual ~TaskManager();
+	TaskManagerSessionComponent();
+	virtual ~TaskManagerSessionComponent();
 
-	void addTasks(const char* const xml);
+	void addTasks(Genode::Ram_dataspace_capability xmlDs);
 	void clearTasks();
 	char* const getBinarySpace(const std::string& name, size_t size);
 	void clearBinaries();
@@ -27,4 +29,6 @@ protected:
 	std::list<Task> _tasks;
 	Launchpad _launchpad;
 	Genode::Signal_receiver _sigRec;
+
+	static Genode::Number_of_bytes _launchpadQuota();
 };

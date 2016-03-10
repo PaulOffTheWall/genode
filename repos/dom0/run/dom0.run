@@ -53,13 +53,17 @@ set config {
 		<provides> <service name="Timer"/> </provides>
 	</start>
 	<start name="dom0">
-		<resource name="RAM" quantum="80M"/>
+		<resource name="RAM" quantum="10M"/>
 		<provides><service name="dom0"/></provides>
 		<config>
-			<dhcp>no</dhcp>
-			<listen-address>192.168.0.14</listen-address>
-			<port>3001</port>
-			<launchpad-quota>70M</launchpad-quota>
+			<server dhcp="no" listen-address="192.168.0.14" port="3001"/>
+		</config>
+	</start>
+	<start name="task-manager">
+		<resource name="RAM" quantum="40M"/>
+		<provides><service name="task-manager"/></provides>
+		<config>
+			<launchpad quota="20M"/>
 		</config>
 	</start>}
 
@@ -103,7 +107,7 @@ append qemu_args "-net vde,sock=/tmp/switch1 "
 append qemu_args "-net nic,model=lan9118,macaddr=02:00:00:00:01:01 "
 
 set boot_modules {
-	core init dom0
+	core init dom0 task-manager
 	timer
 	ld.lib.so
 	libc.lib.so

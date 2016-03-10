@@ -4,12 +4,16 @@
 #include <nic/packet_allocator.h>
 #include <cstring>
 
-bool getNodeValue(const Genode::Xml_node& configNode, const char* type, char* dst, size_t maxLen)
+bool attributeValue(const Genode::Xml_node& node, const char* type, char* dst, const char* defaultVal, size_t maxLen)
 {
-	if (configNode.has_sub_node(type))
+	if (node.has_attribute(type))
 	{
-		configNode.sub_node(type).value(dst, maxLen);
+		node.attribute(type).value(dst, maxLen);
 		return true;
+	}
+	else
+	{
+		std::strcpy(dst, defaultVal);
 	}
 	return false;
 }
@@ -20,23 +24,15 @@ Config loadConfig()
 {
 	Config config;
 
-	// Defaults
-	config.bufSize = Nic::Packet_allocator::DEFAULT_PACKET_SIZE * 128;
-	std::strcpy(config.dhcp, "no");
-	std::strcpy(config.listenAddress, "0.0.0.0");
-	std::strcpy(config.networkMask, "255.255.255.0");
-	std::strcpy(config.networkGateway, "192.168.0.254");
-	config.port = 3001;
-	config.launchpadQuota = 16*1024*1024;
-
 	const Genode::Xml_node& configNode = Genode::config()->xml_node();
-	getNodeValue(configNode, "buf-size", &config.bufSize);
-	getNodeValue(configNode, "dhcp", config.dhcp, 4);
-	getNodeValue(configNode, "listen-address", config.listenAddress, 16);
-	getNodeValue(configNode, "network-mask", config.networkMask, 16);
-	getNodeValue(configNode, "network-gateway", config.networkGateway, 16);
-	getNodeValue(configNode, "port", &config.port);
-	getNodeValue(configNode, "launchpad-quota", &config.launchpadQuota);
+	const Genode::Xml_node& serverNode = configNode.sub_node("server");
+
+	config.bufSize = serverNode.attribute_value<unsigned int>("buf-size", Nic::Packet_allocator::DEFAULT_PACKET_SIZE * 128);
+	attributeValue(serverNode, "dhcp", config.dhcp, "no", 4);
+	attributeValue(serverNode, "listen-address", config.listenAddress, "0.0.0.0", 16);
+	attributeValue(serverNode, "network-mask", config.networkMask, "255.255.255.0", 16);
+	attributeValue(serverNode, "network-gateway", config.networkGateway, "192.168.0.254", 16);
+	config.port = serverNode.attribute_value<unsigned int>("port", 3001);
 
 	// Print config
 	PINF("Config readouts:\n");
@@ -46,7 +42,6 @@ Config loadConfig()
 	PINF("\tNetwork mask: %s\n", config.networkMask);
 	PINF("\tNetwork gateway: %s\n", config.networkGateway);
 	PINF("\tPort: %d\n", config.port);
-	PINF("\tLaunchpad Quota: %d\n", (size_t)config.launchpadQuota);
 
 	return config;
 }

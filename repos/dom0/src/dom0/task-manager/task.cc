@@ -2,7 +2,6 @@
 
 #include <base/elf.h>
 #include <cstring>
-#include "config.h"
 
 Task::Task(
 	const Genode::Xml_node& node,
@@ -17,14 +16,14 @@ Task::Task(
 {
 	const Genode::Xml_node& configNode = node.sub_node("config");
 
-	getNodeValue(node, "id", &_id);
-	getNodeValue(node, "executiontime", &_executionTime);
-	getNodeValue(node, "criticaltime", &_criticalTime);
-	getNodeValue(node, "priority", &_priority);
-	getNodeValue(node, "period", &_period);
-	getNodeValue(node, "offset", &_offset);
-	getNodeValue(node, "quota", &_quota);
-	getNodeValue(node, "pkg", _binaryName, 16);
+	_getNodeValue(node, "id", &_id);
+	_getNodeValue(node, "executiontime", &_executionTime);
+	_getNodeValue(node, "criticaltime", &_criticalTime);
+	_getNodeValue(node, "priority", &_priority);
+	_getNodeValue(node, "period", &_period);
+	_getNodeValue(node, "offset", &_offset);
+	_getNodeValue(node, "quota", &_quota);
+	_getNodeValue(node, "pkg", _binaryName, 16);
 	std::strncpy(_config.local_addr<char>(), configNode.addr(), configNode.size());
 	_makeName();
 
@@ -71,4 +70,14 @@ bool Task::_checkDynamicElf(Genode::Attached_ram_dataspace& ds)
 	/* read program header */
 	Genode::Elf_binary elf((Genode::addr_t)ds.local_addr<char>());
 	return elf.is_dynamically_linked();
+}
+
+bool Task::_getNodeValue(const Genode::Xml_node& configNode, const char* type, char* dst, size_t maxLen)
+{
+	if (configNode.has_sub_node(type))
+	{
+		configNode.sub_node(type).value(dst, maxLen);
+		return true;
+	}
+	return false;
 }
