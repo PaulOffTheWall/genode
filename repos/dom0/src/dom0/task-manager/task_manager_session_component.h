@@ -39,6 +39,7 @@ protected:
 	Genode::Attached_ram_dataspace _profileData;
 
 	void _updateProfileData();
+	Task* _taskByName(const std::string& name);
 
 	static Genode::Number_of_bytes _launchpadQuota();
 	static Genode::Number_of_bytes _traceQuota();

@@ -6,6 +6,8 @@
 #include <util/xml_node.h>
 #include <util/xml_generator.h>
 
+#include <string>
+
 TaskManagerSessionComponent::TaskManagerSessionComponent(Server::Entrypoint& ep) :
 	_binaries(),
 	_tasks(),
@@ -89,6 +91,8 @@ void TaskManagerSessionComponent::_updateProfileData()
 	Genode::Trace::Subject_id subjects[MAX_NUM_SUBJECTS];
 	size_t numSubjects = _trace.subjects(subjects, MAX_NUM_SUBJECTS);
 	Genode::Trace::Subject_info info;
+	std::string label;
+	Genode::Trace::Subject_info::State state;
 
 	// Xml_generator directly writes XML data into the buffer on construction, explaining the heavy recursion here.
 	Genode::Xml_generator xml(_profileData.local_addr<char>(), _profileData.size(), "profile-data", [&]()
@@ -96,12 +100,14 @@ void TaskManagerSessionComponent::_updateProfileData()
 		for (Genode::Trace::Subject_id* subject = subjects; subject < subjects + numSubjects; ++subject)
 		{
 			info = _trace.subject_info(*subject);
+			label = info.session_label().string();
+			state = info.state();
 			xml.node("subject", [&]()
 			{
 				xml.attribute("id", std::to_string(subject->id).c_str());
 				xml.node("session", [&]()
 				{
-					xml.append(info.session_label().string());
+					xml.append(label.c_str());
 				});
 				xml.node("thread", [&]()
 				{
@@ -109,15 +115,53 @@ void TaskManagerSessionComponent::_updateProfileData()
 				});
 				xml.node("state", [&]()
 				{
-					xml.append(Genode::Trace::Subject_info::state_name(info.state()));
+					xml.append(Genode::Trace::Subject_info::state_name(state));
 				});
 				xml.node("execution-time", [&]()
 				{
 					xml.append(std::to_string(info.execution_time().value).c_str());
 				});
+
+				// Check if the session is started by this task manager.
+				size_t leafPos = label.rfind("task-manager -> ");
+				Task* task = nullptr;
+				if (leafPos < std::string::npos)
+				{
+					task = _taskByName(label.substr(leafPos + 16));
+				}
+				if (task)
+				{
+					// Add more detail to tasks started by us.
+					xml.node("task-info", [&]()
+					{
+						xml.node("quota", [&]()
+						{
+							if (state == (Genode::Trace::Subject_info::UNTRACED || state == Genode::Trace::Subject_info::TRACED) && task->child())
+							{
+								xml.append("ok");
+							}
+							else
+							{
+								xml.append("error");
+							}
+						});
+					});
+				}
 			});
 		}
 	});
+}
+
+Task* TaskManagerSessionComponent::_taskByName(const std::string& name)
+{
+	for (Task& task : _tasks)
+	{
+		if (task.name() == name)
+		{
+			return &task;
+		}
+	}
+	return nullptr;
 }
 
 Genode::Number_of_bytes TaskManagerSessionComponent::_launchpadQuota()
