@@ -53,3 +53,8 @@ This port of dom0 supports DHCP. For this, change the `<dhcp>` field in `dom0.ru
 The python script Dom0Client provides a simple class to communicate with Genode's dom0 server.
 
 The script will attempt connection on startup. Further instructions are provided at run-time.
+
+### Fine-grained CPU time
+The Fiasco.OC kernel by default only returns timing information at a resolution of 1ms. Granularity can be increased by changing line 51 of `build/genode-TARGET/kernel/fiasco.oc/globalconfig.out` to
+
+`CONFIG_FINE_GRAINED_CPUTIME=y`

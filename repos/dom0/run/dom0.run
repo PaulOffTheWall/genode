@@ -44,6 +44,7 @@ set config {
 		<service name="CPU"/>
 		<service name="LOG"/>
 		<service name="SIGNAL"/>
+		<service name="TRACE"/>
 	</parent-provides>
 	<default-route>
 		<any-service> <parent/> <any-child/> </any-service>
@@ -64,6 +65,8 @@ set config {
 		<provides><service name="task-manager"/></provides>
 		<config>
 			<launchpad quota="20M"/>
+			<trace quota="1M" buf-size="64K"/>
+			<profile ds-size="128K"/>
 		</config>
 	</start>}
 

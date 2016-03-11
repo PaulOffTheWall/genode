@@ -1,12 +1,14 @@
 #pragma once
 
-#include <util/noncopyable.h>
-#include <util/xml_node.h>
+#include <unordered_map>
+
 #include <os/attached_ram_dataspace.h>
+#include <os/server.h>
+#include <os/signal_rpc_dispatcher.h>
 #include <launchpad/launchpad.h>
 #include <timer_session/connection.h>
-#include <base/signal.h>
-#include <unordered_map>
+#include <util/noncopyable.h>
+#include <util/xml_node.h>
 
 // Noncopyable because dataspaces might get invalidated.
 class Task : Genode::Noncopyable
@@ -16,7 +18,7 @@ public:
 		const Genode::Xml_node& node,
 		std::unordered_map<std::string, Genode::Attached_ram_dataspace>& binaries,
 		Launchpad& launchpad,
-		Genode::Signal_receiver& sigRec);
+		Server::Entrypoint& ep);
 	virtual ~Task();
 
 	void run();
@@ -41,13 +43,17 @@ protected:
 	Launchpad& _launchpad;
 	Launchpad_child* _child;
 
-	Timer::Connection _timer;
+	Timer::Connection _startTimer;
+	Timer::Connection _killTimer;
 
-	Genode::Signal_receiver& _sigRec;
-	Genode::Signal_dispatcher<Task> _startDispatcher;
+	Genode::Signal_rpc_member<Task> _startDispatcher;
+	Genode::Signal_rpc_member<Task> _killDispatcher;
+	Genode::Signal_rpc_member<Task> _idleDispatcher;
 
 	void _makeName();
 	void _start(unsigned);
+	void _kill(unsigned);
+	void _idle(unsigned);
 
 	static bool _checkDynamicElf(Genode::Attached_ram_dataspace& ds);
 

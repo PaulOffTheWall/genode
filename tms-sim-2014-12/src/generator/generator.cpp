@@ -56,9 +56,9 @@ int main(int argc, char*argv[]) {
 
         // Periodic Tasks
         for(int taskNo=1; taskNo<=num; taskNo++) {
-            int et = rand() % 5 + 1;
+            int et = rand() % 5000 + 1000;
             int ct = et;
-            int period = rand() % 20 + 1;
+            int period = rand() % 20000 + 10000;
             int offset = 0;
             int prio = 1;
 

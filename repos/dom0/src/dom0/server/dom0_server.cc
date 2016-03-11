@@ -98,6 +98,10 @@ void Dom0Server::serve()
 			PDBG("Received XML.");
 			_taskManager.addTasks(xmlDs.cap());
 		}
+		else if (message == CLEAR)
+		{
+			_taskManager.clearTasks();
+		}
 		else if (message == SEND_BINARIES)
 		{
 			PDBG("Ready to receive binaries.\n");
@@ -134,6 +138,23 @@ void Dom0Server::serve()
 		else if (message == START)
 		{
 			_taskManager.start();
+		}
+		else if (message == STOP)
+		{
+			_taskManager.stop();
+		}
+		else if (message == GET_PROFILE)
+		{
+			Genode::Dataspace_capability xmlDsCap = _taskManager.profileData();
+			Genode::Rm_session* rm = Genode::env()->rm_session();
+			char* xml = (char*)rm->attach(xmlDsCap);
+
+			size_t size = std::strlen(xml) + 1;
+			PINF("Sending profile data of size %d", size);
+			NETCHECK_LOOP(sendInt32_t(size));
+			NETCHECK_LOOP(sendData(xml, size));
+
+			rm->detach(xml);
 		}
 		else
 		{

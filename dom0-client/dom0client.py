@@ -74,6 +74,31 @@ class Dom0Session:
 		self.sendBins()
 		self.start()
 
+	def stop(self):
+		"""Send message to kill all tasks."""
+		print('Stopping tasks on server.')
+		meta = struct.pack('I', magicnumbers.STOP)
+		self.conn.send(meta)
+
+	def clear(self):
+		"""Send command to stop all tasks and clear the current task set."""
+		print('Resetting all tasks on server.')
+		meta = struct.pack('I', magicnumbers.CLEAR)
+		self.conn.send(meta)
+
+	def getProfile(self):
+		"""Get profiling information about all running tasks."""
+		print('Requesting profile data.')
+		meta = struct.pack('I', magicnumbers.GET_PROFILE)
+		self.conn.send(meta)
+
+		size = int.from_bytes(self.conn.recv(4), 'little')
+		xml = b''
+		print('Receiving profiling data of size {}'.format(size))
+		while len(xml) < size:
+			xml += self.conn.recv(size)
+		print(xml.decode('utf-8'))
+
 	def close(self):
 		"""Close connection."""
 		self.conn.close();
@@ -82,10 +107,13 @@ session = Dom0Session()
 
 print('''
 Available commands:
-	session.sendDescs()	: Send task descriptions to server.
-	session.sendBins()	: Send binaries to server.
-	session.start()		: Start tasks on server.
-	session.startEx()	: Do all of the above in order.
+	session.sendDescs()		: Send task descriptions to server.
+	session.sendBins()		: Send binaries to server.
+	session.start()			: Start tasks on server.
+	session.startEx()		: Do all of the above in order.
+	session.stop()			: Stop all running tasks on server.
+	session.clear()			: Stop and clear all tasks on the server. Binaries will be kept.
+	session.getProfile()		: Request profiling data from server.
 
 	session.readTasks([tasksFile])	: Load tasks file (default tasks.xml).
 	session.connect([host, port])	: Connect to dom0 server (default 192.168.0.14:3001).
