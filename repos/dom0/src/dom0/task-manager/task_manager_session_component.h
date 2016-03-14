@@ -20,21 +20,34 @@ public:
 	TaskManagerSessionComponent(Server::Entrypoint& ep);
 	virtual ~TaskManagerSessionComponent();
 
+	// Create tasks in idle state from XML description.
 	void addTasks(Genode::Ram_dataspace_capability xmlDsCap);
+
+	// Allocate and return a capability of a new dataspace to be used for a task binary.
 	Genode::Ram_dataspace_capability binaryDs(Genode::Ram_dataspace_capability nameDsCap, size_t size);
+
+	// Destruct all tasks.
 	void clearTasks();
+
+	// Start idle tasks.
 	void start();
+
+	// Stop all tasks.
 	void stop();
+
+	// Get profiling data as an XML file.
 	Genode::Ram_dataspace_capability profileData();
 
 protected:
+	Server::Entrypoint& _ep;
 	std::unordered_map<std::string, Genode::Attached_ram_dataspace> _binaries;
+	Genode::Sliced_heap _heap;
+	Genode::Cap_connection _cap;
+	Genode::Service_registry _parentServices;
 
 	// List instead of vector because reallocation would invalidate dataspaces.
 	std::list<Task> _tasks;
 
-	Launchpad _launchpad;
-	Server::Entrypoint& _ep;
 	Genode::Trace::Connection _trace;
 	Genode::Attached_ram_dataspace _profileData;
 

@@ -9,16 +9,32 @@
 #include <string>
 
 TaskManagerSessionComponent::TaskManagerSessionComponent(Server::Entrypoint& ep) :
-	_binaries(),
-	_tasks(),
-	_launchpad(_launchpadQuota()),
-	_ep(ep),
-	_trace(_traceQuota(), _traceBufSize(), 0),
-	_profileData(Genode::env()->ram_session(), _profileDsSize())
+	_ep{ep},
+	_binaries{},
+	_heap{Genode::env()->ram_session(), Genode::env()->rm_session()},
+	_cap{},
+	_parentServices{},
+	_tasks{},
+	_trace{_traceQuota(), _traceBufSize(), 0},
+	_profileData{Genode::env()->ram_session(), _profileDsSize()}
 {
 	// Load dynamic linker for dynamically linked binaries.
 	static Genode::Rom_connection ldso_rom("ld.lib.so");
 	Genode::Process::dynamic_linker(ldso_rom.dataspace());
+
+	// Names of services provided by the parent.
+	static const char* names[] =
+	{
+		// core services
+		"CAP", "RAM", "RM", "PD", "CPU", "IO_MEM", "IO_PORT",
+		"IRQ", "ROM", "LOG", "SIGNAL"
+	};
+	for (const char* name : names)
+	{
+		_parentServices.insert(new (Genode::env()->heap()) Genode::Parent_service(name));
+	}
+
+
 }
 
 TaskManagerSessionComponent::~TaskManagerSessionComponent()
@@ -29,12 +45,12 @@ void TaskManagerSessionComponent::addTasks(Genode::Ram_dataspace_capability xmlD
 {
 	Genode::Rm_session* rm = Genode::env()->rm_session();
 	const char* xml = rm->attach(xmlDsCap);
-	PINF("Parsing XML file:\n%s", xml);
+	PDBG("Parsing XML file:\n%s", xml);
 	Genode::Xml_node root(xml);
 
 	const auto fn = [this] (const Genode::Xml_node& node)
 	{
-		_tasks.emplace_back(node, _binaries, _launchpad, _ep);
+		_tasks.emplace_back(_ep, _binaries, _heap, _cap, _parentServices, node);
 	};
 	root.for_each_sub_node("periodictask", fn);
 	rm->detach(xml);
@@ -42,7 +58,7 @@ void TaskManagerSessionComponent::addTasks(Genode::Ram_dataspace_capability xmlD
 
 void TaskManagerSessionComponent::clearTasks()
 {
-	PINF("Clearing %d task%s. Binaries still held.", _tasks.size(), _tasks.size() == 1 ? "" : "s");
+	PDBG("Clearing %d task%s. Binaries still held.", _tasks.size(), _tasks.size() == 1 ? "" : "s");
 	_tasks.clear();
 }
 
@@ -50,7 +66,7 @@ Genode::Ram_dataspace_capability TaskManagerSessionComponent::binaryDs(Genode::R
 {
 	Genode::Rm_session* rm = Genode::env()->rm_session();
 	const char* name = rm->attach(nameDsCap);
-	PINF("Reserving %d bytes for binary %s", size, name);
+	PDBG("Reserving %d bytes for binary %s", size, name);
 	Genode::Ram_session* ram = Genode::env()->ram_session();
 
 	// Hoorray for C++ syntax. This basically forwards ctor arguments, constructing the dataspace in-place so there is no copy or dtor call involved which may invalidate the attached pointer.
@@ -136,14 +152,6 @@ void TaskManagerSessionComponent::_updateProfileData()
 					{
 						xml.node("quota", [&]()
 						{
-							if (state == (Genode::Trace::Subject_info::UNTRACED || state == Genode::Trace::Subject_info::TRACED) && task->child())
-							{
-								xml.append("ok");
-							}
-							else
-							{
-								xml.append("error");
-							}
 						});
 					});
 				}

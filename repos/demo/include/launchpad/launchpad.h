@@ -268,9 +268,7 @@ class Launchpad
 		                          Genode::Allocator *alloc) { }
 
 		Launchpad_child *start_child(const char *prg_name, unsigned long quota,
-		                             Genode::Dataspace_capability config_ds,
-		                             Genode::Dataspace_capability binary_ds = 
-		                               Genode::Dataspace_capability());
+		                             Genode::Dataspace_capability config_ds);
 
 		/**
 		 * Exit child and close all its sessions

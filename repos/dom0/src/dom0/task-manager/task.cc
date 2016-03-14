@@ -2,34 +2,100 @@
 
 #include <base/elf.h>
 #include <cstring>
+#include <vector>
+
+Task::ChildPolicy::ChildPolicy(
+	const std::string& name,
+	Genode::Service_registry& parentServices,
+	Genode::Dataspace_capability configDs,
+	Genode::Dataspace_capability binaryDs,
+	Genode::Rpc_entrypoint& parentEntrypoint) :
+		_parentServices(&parentServices),
+		_parentEntrypoint(&parentEntrypoint),
+		_configPolicy("config", configDs, _parentEntrypoint),
+		_binaryPolicy("binary", binaryDs, _parentEntrypoint),
+		_active(true)
+{
+	std::strncpy(_name, name.c_str(), 32);
+}
+
+void Task::ChildPolicy::exit(int exitValue)
+{
+	_active = false;
+	PDBG("child %s exited with exit value %d", name(), exitValue);
+}
+
+const char* Task::ChildPolicy::name() const
+{
+	return _name;
+}
+
+bool Task::ChildPolicy::active() const
+{
+	return _active;
+}
+
+Genode::Service* Task::ChildPolicy::resolve_session_request(const char* serviceName, const char* args)
+{
+	Genode::Service* service = nullptr;
+
+	// check for config file request
+	if ((service = _configPolicy.resolve_session_request(serviceName, args)))
+	{
+		return service;
+	}
+
+	// check for binary file request
+	if ((service = _binaryPolicy.resolve_session_request(serviceName, args)))
+	{
+		return service;
+	}
+
+	// check parent services
+	if ((service = _parentServices->find(serviceName)))
+	{
+		return service;
+	}
+
+	PERR("Service %s requested by %s not found.", serviceName, _name);
+	return nullptr;
+}
 
 Task::Task(
-	const Genode::Xml_node& node,
+	Server::Entrypoint& ep,
 	std::unordered_map<std::string, Genode::Attached_ram_dataspace>& binaries,
-	Launchpad& launchpad,
-	Server::Entrypoint& ep) :
-		_config(Genode::env()->ram_session(), node.sub_node("config").size()),
-		_name(),
-		_binaries(binaries),
-		_launchpad(launchpad),
-		_child(nullptr),
-		_startDispatcher(ep, *this, &Task::_start),
-		_killDispatcher(ep, *this, &Task::_kill),
-		_idleDispatcher(ep, *this, &Task::_idle)
+	Genode::Sliced_heap& heap,
+	Genode::Cap_session& cap,
+	Genode::Service_registry& parentServices,
+	const Genode::Xml_node& node) :
+		_binaries{binaries},
+		_heap{heap},
+		_parentServices{parentServices},
+		_id           {_getNodeValue<unsigned int>(node, "id")},
+		_executionTime{_getNodeValue<unsigned int>(node, "executiontime")},
+		_criticalTime {_getNodeValue<unsigned int>(node, "criticaltime")},
+		_priority     {_getNodeValue<unsigned int>(node, "priority")},
+		_period       {_getNodeValue<unsigned int>(node, "period")},
+		_offset       {_getNodeValue<unsigned int>(node, "offset")},
+		_quota        {_getNodeValue<Genode::Number_of_bytes>(node, "quota")},
+		_binaryName   {_getNodeValue(node, "pkg", 32, "")},
+		_config{Genode::env()->ram_session(), node.sub_node("config").size()},
+		_name{_makeName()},
+		_startTimer{},
+		_killTimer{},
+		_startDispatcher{ep, *this, &Task::_start},
+		_killDispatcher{ep, *this, &Task::_killCrit},
+		_idleDispatcher{ep, *this, &Task::_idle},
+		_childEp{&cap, 12 * 1024, _name.c_str(), false},
+		_ram{},
+		_cpu{_name.c_str()},
+		_rm{},
+		_pd{},
+		_childPolicy{nullptr},
+		_child{nullptr}
 {
 	const Genode::Xml_node& configNode = node.sub_node("config");
-
-	_getNodeValue(node, "id", &_id);
-	_getNodeValue(node, "executiontime", &_executionTime);
-	_getNodeValue(node, "criticaltime", &_criticalTime);
-	_getNodeValue(node, "priority", &_priority);
-	_getNodeValue(node, "period", &_period);
-	_getNodeValue(node, "offset", &_offset);
-	_getNodeValue(node, "quota", &_quota);
-	_getNodeValue(node, "pkg", _binaryName, 16);
 	std::strncpy(_config.local_addr<char>(), configNode.addr(), configNode.size());
-
-	_makeName();
 }
 
 Task::~Task()
@@ -58,8 +124,6 @@ void Task::stop()
 	PINF("Stopping task %s\n", _name.c_str());
 	if (_child)
 	{
-		_launchpad.exit_child(_child);
-		_child = nullptr;
 	}
 
 	// "Stop" timers.
@@ -74,16 +138,11 @@ std::string Task::name() const
 	return _name;
 }
 
-Launchpad_child* Task::child() const
+std::string Task::_makeName() const
 {
-	return _child;
-}
-
-void Task::_makeName()
-{
-	char name[20];
-	snprintf(name, sizeof(name), "%.2d.%s", _id, _binaryName);
-	_name = name;
+	char id[4];
+	snprintf(id, sizeof(id), "%.2d.", _id);
+	return std::string(id) + _binaryName;
 }
 
 void Task::_start(unsigned)
@@ -91,30 +150,82 @@ void Task::_start(unsigned)
 	if (_child)
 	{
 		PINF("Trying to start %s but previous instance still running. Killing first.\n", _name.c_str());
-		_launchpad.exit_child(_child);
-		_child = nullptr;
+		_kill();
 	}
-	Genode::Attached_ram_dataspace& ds = _binaries.at(_binaryName);
 
-	_makeName();
-	PINF("Starting %s linked task %s", _checkDynamicElf(ds) ? "dynamically" : "statically", _name.c_str());
-	_child = _launchpad.start_child(_name.c_str(), _quota, _config.cap(), ds.cap());
+	// Check if binary has already been received.
+	auto binIt = _binaries.find(_binaryName);
+	if (binIt == _binaries.end())
+	{
+		PERR("Binary %s for task %s not found, possibly not yet received by dom0.", _binaryName.c_str(), _name.c_str());
+		return;
+	}
 
-	// Launchpad might give the child a different name if a task with the same name already exists.
-	// This will be announced to the console by Launchpad.
-	_name = _child->name();
+	Genode::Attached_ram_dataspace& ds = binIt->second;
+
+	PINF("Starting %s linked task %s with quota %u", _checkDynamicElf(ds) ? "dynamically" : "statically", _name.c_str(), (size_t)_quota);
 
 	// Dispatch kill timer after critical time.
 	_killTimer.trigger_once(_criticalTime * 1000);
+
+	// Abort if RAM quota insufficient. Alternatively, we could give all remaining quota to the child.
+	if (_quota > Genode::env()->ram_session()->avail()) {
+		PERR("Not enough RAM quota for task %s, requested: %u, available: %u", _name.c_str(), (size_t)_quota, Genode::env()->ram_session()->avail());
+		return;
+	}
+
+	// Transfer RAM to child.
+	_ram.ref_account(Genode::env()->ram_session_cap());
+	if (Genode::env()->ram_session()->transfer_quota(_ram.cap(), _quota) != 0)
+	{
+		PERR("Failed to transfer RAM quota to child %s", _name.c_str());
+		return;
+	}
+
+	try
+	{
+		_childPolicy = new (&_heap) ChildPolicy(_name, _parentServices, _config.cap(), _binaries.at(_binaryName).cap(), _childEp);
+		_child = new (&_heap) Genode::Child(binIt->second.cap(), _pd.cap(), _ram.cap(), _cpu.cap(), _rm.cap(), &_childEp, _childPolicy);
+		_childEp.activate();
+	}
+	catch (Genode::Cpu_session::Thread_creation_failed)
+	{
+		PWRN("Failed to create child - Cpu_session::Thread_creation_failed");
+	}
+	catch (...)
+	{
+		PWRN("Failed to create child - unknown reason");
+	}
 }
 
-void Task::_kill(unsigned)
+void Task::_killCrit(unsigned)
 {
 	if (_child)
 	{
-		PINF("Critical time reached. Killing %s\n", _name.c_str());
-		_launchpad.exit_child(_child);
-		_child = nullptr;
+		PINF("Critical time reached for %s", _name.c_str());
+		_kill();
+	}
+}
+
+void Task::_kill()
+{
+	if (_child)
+	{
+		if (_childPolicy->active())
+		{
+			PINF("Killing %s", _name.c_str());
+			_child->exit(-1);
+		}
+		if (_childPolicy)
+		{
+			_heap.free(_childPolicy, sizeof(ChildPolicy));
+			_childPolicy = nullptr;
+		}
+		if (_child)
+		{
+			_heap.free(_child, sizeof(Genode::Child));
+			_child = nullptr;
+		}
 	}
 }
 
@@ -130,12 +241,13 @@ bool Task::_checkDynamicElf(Genode::Attached_ram_dataspace& ds)
 	return elf.is_dynamically_linked();
 }
 
-bool Task::_getNodeValue(const Genode::Xml_node& configNode, const char* type, char* dst, size_t maxLen)
+std::string Task::_getNodeValue(const Genode::Xml_node& configNode, const char* type, size_t maxLen, const std::string& defaultVal)
 {
 	if (configNode.has_sub_node(type))
 	{
-		configNode.sub_node(type).value(dst, maxLen);
-		return true;
+		std::vector<char> out(maxLen);
+		configNode.sub_node(type).value(out.data(), maxLen);
+		return out.data();
 	}
-	return false;
+	return defaultVal;
 }
