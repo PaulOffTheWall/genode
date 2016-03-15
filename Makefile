@@ -19,7 +19,7 @@ tms:
 	@cd tms-sim-2014-12/build && ../build-local.sh .. && $(MAKE) && $(MAKE) install
 
 descs:
-	@tms-sim-2014-12/build/bin/generator -o dom0-client/tasks.xml -n 1
+	@tms-sim-2014-12/build/bin/generator -o dom0-client/tasks.xml -n 5
 #
 # ================================================================
 

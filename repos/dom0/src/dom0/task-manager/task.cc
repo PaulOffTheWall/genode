@@ -61,9 +61,10 @@ Genode::Service* Task::Child_policy::resolve_session_request(const char* service
 	return nullptr;
 }
 
-Task::Meta::Meta(const std::string& name, size_t quota) :
+Task::Meta::Meta(const std::string& name, size_t quota, unsigned int priority) :
 	ram{},
-	cpu{name.c_str()},
+	// Scale priority.
+	cpu{name.c_str(), (long int)priority * Genode::config()->xml_node().attribute_value<long int>("prio_levels", 0)},
 	rm{},
 	pd{}
 {
@@ -77,11 +78,12 @@ Task::Meta::Meta(const std::string& name, size_t quota) :
 Task::Meta_ex::Meta_ex(
 	const std::string& name,
 	size_t quota,
+	unsigned int priority,
 	Genode::Service_registry& parent_services,
 	Genode::Dataspace_capability config_ds,
 	Genode::Dataspace_capability binary_ds,
 	Genode::Rpc_entrypoint& parent_entrypoint) :
-		Meta{name, quota},
+		Meta{name, quota, priority},
 		policy{name, parent_services, config_ds, binary_ds, parent_entrypoint},
 		child{binary_ds, pd.cap(), ram.cap(), cpu.cap(), rm.cap(), &parent_entrypoint, &policy}
 {
@@ -187,7 +189,7 @@ void Task::_start(unsigned)
 
 	Genode::Attached_ram_dataspace& ds = bin_it->second;
 
-	PINF("Starting %s linked task %s with quota %u", _check_dynamic_elf(ds) ? "dynamically" : "statically", _name.c_str(), (size_t)_quota);
+	PINF("Starting %s linked task %s with quota %u and priority %u", _check_dynamic_elf(ds) ? "dynamically" : "statically", _name.c_str(), (size_t)_quota, _priority);
 
 	// Dispatch kill timer after critical time.
 	_kill_timer.trigger_once(_critical_time * 1000);
@@ -201,7 +203,7 @@ void Task::_start(unsigned)
 	try
 	{
 		PINF("Allocating child meta data on heap.");
-		_meta = new (&_heap) Meta_ex(_name, _quota, _parent_services, _config.cap(), ds.cap(), _child_ep);
+		_meta = new (&_heap) Meta_ex(_name, _quota, _priority, _parent_services, _config.cap(), ds.cap(), _child_ep);
 		_child_ep.activate();
 	}
 	catch (Genode::Cpu_session::Thread_creation_failed)

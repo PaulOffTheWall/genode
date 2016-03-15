@@ -36,12 +36,12 @@ Config load_config()
 
 	// Print config
 	PINF("Config readouts:\n");
-	PINF("\t_buffer size: %d\n", config.buf_size);
-	PINF("\t_use DHCP: %s\n", config.dhcp);
-	PINF("\t_listening address: %s\n", config.listen_address);
-	PINF("\t_network mask: %s\n", config.network_mask);
-	PINF("\t_network gateway: %s\n", config.network_gateway);
-	PINF("\t_port: %d\n", config.port);
+	PINF("\tBuffer size: %d\n", config.buf_size);
+	PINF("\tUse DHCP: %s\n", config.dhcp);
+	PINF("\tListening address: %s\n", config.listen_address);
+	PINF("\tNetwork mask: %s\n", config.network_mask);
+	PINF("\tNetwork gateway: %s\n", config.network_gateway);
+	PINF("\tPort: %d\n", config.port);
 
 	return config;
 }

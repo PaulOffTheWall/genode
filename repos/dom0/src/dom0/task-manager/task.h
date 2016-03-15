@@ -46,7 +46,7 @@ public:
 	struct Meta
 	{
 	public:
-		Meta(const std::string& name, size_t quota);
+		Meta(const std::string& name, size_t quota, unsigned int priority);
 
 		Genode::Ram_connection ram;
 		Genode::Cpu_connection cpu;
@@ -60,6 +60,7 @@ public:
 		Meta_ex(
 			const std::string& name,
 			size_t quota,
+			unsigned int priority,
 			Genode::Service_registry& parent_services,
 			Genode::Dataspace_capability config_ds,
 			Genode::Dataspace_capability binary_ds,

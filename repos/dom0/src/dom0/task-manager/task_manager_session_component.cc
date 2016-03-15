@@ -33,8 +33,6 @@ Task_manager_session_component::Task_manager_session_component(Server::Entrypoin
 	{
 		_parent_services.insert(new (Genode::env()->heap()) Genode::Parent_service(name));
 	}
-
-
 }
 
 Task_manager_session_component::~Task_manager_session_component()
