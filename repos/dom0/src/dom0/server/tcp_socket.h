@@ -30,18 +30,18 @@ public:
 	}
 
 	// Receive data from the socket and write it into data.
-	ssize_t receiveData(void* data, size_t size);
+	ssize_t receive_data(void* data, size_t size);
 
 	// convenience function
 	ssize_t receiveInt32_t(int32_t& data);
 
 	// Send data from buffer data with size size to the socket.
-	ssize_t sendData(void* data, size_t size);
+	ssize_t send_data(void* data, size_t size);
 
 	// convenience function
 	ssize_t sendInt32_t(int32_t data);
 
 protected:
-	int _targetSocket;
-	struct sockaddr_in _targetSockaddrIn;
+	int _target_socket;
+	struct sockaddr_in _target_sockaddr_in;
 };

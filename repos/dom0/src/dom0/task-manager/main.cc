@@ -8,13 +8,13 @@
 
 struct Main
 {
-	Task_manager_root_component taskManagerRoot;
+	Task_manager_root_component task_manager_root;
 
 	Main(Server::Entrypoint& ep) :
-		taskManagerRoot(&ep, Genode::env()->heap())
+		task_manager_root(&ep, Genode::env()->heap())
 	{
 		PDBG("task-manager: Hello!\n");
-		Genode::env()->parent()->announce(ep.rpc_ep().manage(&taskManagerRoot));
+		Genode::env()->parent()->announce(ep.rpc_ep().manage(&task_manager_root));
 	}
 };
 

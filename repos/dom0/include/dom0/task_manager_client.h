@@ -9,19 +9,19 @@ struct Task_manager_session_client : Genode::Rpc_client<Task_manager_session>
 	Task_manager_session_client(Genode::Capability<Task_manager_session> cap) :
 		Genode::Rpc_client<Task_manager_session>(cap) { }
 
-	void addTasks(Genode::Ram_dataspace_capability xmlDsCap)
+	void add_tasks(Genode::Ram_dataspace_capability xml_ds_cap)
 	{
-		call<Rpc_add_tasks>(xmlDsCap);
+		call<Rpc_add_tasks>(xml_ds_cap);
 	}
 
-	void clearTasks()
+	void clear_tasks()
 	{
 		call<Rpc_clear_tasks>();
 	}
 
-	Genode::Ram_dataspace_capability binaryDs(Genode::Ram_dataspace_capability nameDsCap, size_t size)
+	Genode::Ram_dataspace_capability binary_ds(Genode::Ram_dataspace_capability name_ds_cap, size_t size)
 	{
-		return call<Rpc_binary_ds>(nameDsCap, size);
+		return call<Rpc_binary_ds>(name_ds_cap, size);
 	}
 
 	void start()
@@ -34,7 +34,7 @@ struct Task_manager_session_client : Genode::Rpc_client<Task_manager_session>
 		call<Rpc_stop>();
 	}
 
-	Genode::Ram_dataspace_capability profileData()
+	Genode::Ram_dataspace_capability profile_data()
 	{
 		return call<Rpc_profile_data>();
 	}

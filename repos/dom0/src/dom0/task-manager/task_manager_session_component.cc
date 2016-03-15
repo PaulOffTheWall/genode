@@ -13,10 +13,10 @@ Task_manager_session_component::Task_manager_session_component(Server::Entrypoin
 	_binaries{},
 	_heap{Genode::env()->ram_session(), Genode::env()->rm_session()},
 	_cap{},
-	_parentServices{},
+	_parent_services{},
 	_tasks{},
-	_trace{_traceQuota(), _traceBufSize(), 0},
-	_profileData{Genode::env()->ram_session(), _profileDsSize()}
+	_trace{_trace_quota(), _trace_buf_size(), 0},
+	_profile_data{Genode::env()->ram_session(), _profile_ds_size()}
 {
 	// Load dynamic linker for dynamically linked binaries.
 	static Genode::Rom_connection ldso_rom("ld.lib.so");
@@ -31,7 +31,7 @@ Task_manager_session_component::Task_manager_session_component(Server::Entrypoin
 	};
 	for (const char* name : names)
 	{
-		_parentServices.insert(new (Genode::env()->heap()) Genode::Parent_service(name));
+		_parent_services.insert(new (Genode::env()->heap()) Genode::Parent_service(name));
 	}
 
 
@@ -41,31 +41,31 @@ Task_manager_session_component::~Task_manager_session_component()
 {
 }
 
-void Task_manager_session_component::addTasks(Genode::Ram_dataspace_capability xmlDsCap)
+void Task_manager_session_component::add_tasks(Genode::Ram_dataspace_capability xml_ds_cap)
 {
 	Genode::Rm_session* rm = Genode::env()->rm_session();
-	const char* xml = rm->attach(xmlDsCap);
+	const char* xml = rm->attach(xml_ds_cap);
 	PDBG("Parsing XML file:\n%s", xml);
 	Genode::Xml_node root(xml);
 
 	const auto fn = [this] (const Genode::Xml_node& node)
 	{
-		_tasks.emplace_back(_ep, _binaries, _heap, _cap, _parentServices, node);
+		_tasks.emplace_back(_ep, _binaries, _heap, _cap, _parent_services, node);
 	};
 	root.for_each_sub_node("periodictask", fn);
 	rm->detach(xml);
 }
 
-void Task_manager_session_component::clearTasks()
+void Task_manager_session_component::clear_tasks()
 {
 	PDBG("Clearing %d task%s. Binaries still held.", _tasks.size(), _tasks.size() == 1 ? "" : "s");
 	_tasks.clear();
 }
 
-Genode::Ram_dataspace_capability Task_manager_session_component::binaryDs(Genode::Ram_dataspace_capability nameDsCap, size_t size)
+Genode::Ram_dataspace_capability Task_manager_session_component::binary_ds(Genode::Ram_dataspace_capability name_ds_cap, size_t size)
 {
 	Genode::Rm_session* rm = Genode::env()->rm_session();
-	const char* name = rm->attach(nameDsCap);
+	const char* name = rm->attach(name_ds_cap);
 	PDBG("Reserving %d bytes for binary %s", size, name);
 	Genode::Ram_session* ram = Genode::env()->ram_session();
 
@@ -94,27 +94,27 @@ void Task_manager_session_component::stop()
 	}
 }
 
-Genode::Ram_dataspace_capability Task_manager_session_component::profileData()
+Genode::Ram_dataspace_capability Task_manager_session_component::profile_data()
 {
-	_updateProfileData();
-	return _profileData.cap();
+	_update_profile_data();
+	return _profile_data.cap();
 }
 
-void Task_manager_session_component::_updateProfileData()
+void Task_manager_session_component::_update_profile_data()
 {
 	static const size_t MAX_NUM_SUBJECTS = 32;
 
 	Genode::Trace::Subject_id subjects[MAX_NUM_SUBJECTS];
-	size_t numSubjects = _trace.subjects(subjects, MAX_NUM_SUBJECTS);
+	size_t num_subjects = _trace.subjects(subjects, MAX_NUM_SUBJECTS);
 	Genode::Trace::Subject_info info;
 	std::string label;
 	std::string thread;
 	Genode::Trace::Subject_info::State state;
 
 	// Xml_generator directly writes XML data into the buffer on construction, explaining the heavy recursion here.
-	Genode::Xml_generator xml(_profileData.local_addr<char>(), _profileData.size(), "profile-data", [&]()
+	Genode::Xml_generator xml(_profile_data.local_addr<char>(), _profile_data.size(), "profile-data", [&]()
 	{
-		for (Genode::Trace::Subject_id* subject = subjects; subject < subjects + numSubjects; ++subject)
+		for (Genode::Trace::Subject_id* subject = subjects; subject < subjects + num_subjects; ++subject)
 		{
 			info = _trace.subject_info(*subject);
 			label = info.session_label().string();
@@ -141,14 +141,14 @@ void Task_manager_session_component::_updateProfileData()
 				});
 
 				// Check if the session is started by this task manager.
-				size_t leafPos = label.rfind("task-manager -> ");
+				size_t leaf_pos = label.rfind("task-manager -> ");
 				Task* task = nullptr;
-				if (leafPos < std::string::npos)
+				if (leaf_pos < std::string::npos)
 				{
-					std::string process = label.substr(leafPos + 16);
+					std::string process = label.substr(leaf_pos + 16);
 					if (process == thread)
 					{
-						task = _taskByName(label.substr(leafPos + 16));
+						task = _task_by_name(label.substr(leaf_pos + 16));
 					}
 				}
 				if (task && task->meta())
@@ -186,7 +186,7 @@ void Task_manager_session_component::_updateProfileData()
 	});
 }
 
-Task* Task_manager_session_component::_taskByName(const std::string& name)
+Task* Task_manager_session_component::_task_by_name(const std::string& name)
 {
 	for (Task& task : _tasks)
 	{
@@ -198,26 +198,26 @@ Task* Task_manager_session_component::_taskByName(const std::string& name)
 	return nullptr;
 }
 
-Genode::Number_of_bytes Task_manager_session_component::_launchpadQuota()
+Genode::Number_of_bytes Task_manager_session_component::_launchpad_quota()
 {
-	Genode::Xml_node launchpadNode = Genode::config()->xml_node().sub_node("launchpad");
-	return launchpadNode.attribute_value<Genode::Number_of_bytes>("quota", 10 * 1024 * 1024);
+	Genode::Xml_node launchpad_node = Genode::config()->xml_node().sub_node("launchpad");
+	return launchpad_node.attribute_value<Genode::Number_of_bytes>("quota", 10 * 1024 * 1024);
 }
 
-Genode::Number_of_bytes Task_manager_session_component::_traceQuota()
+Genode::Number_of_bytes Task_manager_session_component::_trace_quota()
 {
-	Genode::Xml_node launchpadNode = Genode::config()->xml_node().sub_node("trace");
-	return launchpadNode.attribute_value<Genode::Number_of_bytes>("quota", 1024 * 1024);
+	Genode::Xml_node launchpad_node = Genode::config()->xml_node().sub_node("trace");
+	return launchpad_node.attribute_value<Genode::Number_of_bytes>("quota", 1024 * 1024);
 }
 
-Genode::Number_of_bytes Task_manager_session_component::_traceBufSize()
+Genode::Number_of_bytes Task_manager_session_component::_trace_buf_size()
 {
-	Genode::Xml_node launchpadNode = Genode::config()->xml_node().sub_node("trace");
-	return launchpadNode.attribute_value<Genode::Number_of_bytes>("buf-size", 64 * 1024);
+	Genode::Xml_node launchpad_node = Genode::config()->xml_node().sub_node("trace");
+	return launchpad_node.attribute_value<Genode::Number_of_bytes>("buf-size", 64 * 1024);
 }
 
-Genode::Number_of_bytes Task_manager_session_component::_profileDsSize()
+Genode::Number_of_bytes Task_manager_session_component::_profile_ds_size()
 {
-	Genode::Xml_node launchpadNode = Genode::config()->xml_node().sub_node("profile");
-	return launchpadNode.attribute_value<Genode::Number_of_bytes>("ds-size", 128 * 1024);
+	Genode::Xml_node launchpad_node = Genode::config()->xml_node().sub_node("profile");
+	return launchpad_node.attribute_value<Genode::Number_of_bytes>("ds-size", 128 * 1024);
 }

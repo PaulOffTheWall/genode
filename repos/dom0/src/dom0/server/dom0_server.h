@@ -17,8 +17,8 @@ public:
 	void disconnect();
 
 private:
-	int _listenSocket;
-	struct sockaddr_in _inAddr;
-	sockaddr _targetAddr;
-	Task_manager_connection _taskManager;
+	int _listen_socket;
+	struct sockaddr_in _in_addr;
+	sockaddr _target_addr;
+	Task_manager_connection _task_manager;
 };

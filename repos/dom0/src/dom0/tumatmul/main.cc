@@ -11,8 +11,8 @@ int main(void)
 
 	// Sieve of Erathosthenes
 	unsigned int max = 0;
-	const Genode::Xml_node& configNode = Genode::config()->xml_node();
-	configNode.sub_node("arg1").value<unsigned int>(&max);
+	const Genode::Xml_node& config_node = Genode::config()->xml_node();
+	config_node.sub_node("arg1").value<unsigned int>(&max);
 	unsigned int sqrt = static_cast<unsigned int>(std::sqrt(max));
 
 	PINF("Calculating primes up to %d.", max);
@@ -35,14 +35,14 @@ int main(void)
 		}
 	}
 
-	std::string primesStr;
+	std::string primes_str;
 
 	auto it = primes.crbegin();
 	for (size_t i = 0; i <= 5 && it != primes.crend(); ++i, ++it)
 	{
-		primesStr += std::to_string(*it) + ' ';
+		primes_str += std::to_string(*it) + ' ';
 	}
-	PINF("Last 5 primes up to %d: %s", max, primesStr.c_str());
+	PINF("Last 5 primes up to %d: %s", max, primes_str.c_str());
 	PINF("Calculated %d primes in total.", primes.size());
 
 	return 0;
