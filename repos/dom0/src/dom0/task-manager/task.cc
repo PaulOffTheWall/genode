@@ -198,7 +198,10 @@ void Task::_start(unsigned)
 	PINF("Starting %s linked task %s with quota %u and priority %u", _check_dynamic_elf(ds) ? "dynamically" : "statically", _name.c_str(), (size_t)_quota, _priority);
 
 	// Dispatch kill timer after critical time.
-	_kill_timer.trigger_once(_critical_time * 1000);
+	if (_critical_time > 0)
+	{
+		_kill_timer.trigger_once(_critical_time * 1000);
+	}
 
 	// Abort if RAM quota insufficient. Alternatively, we could give all remaining quota to the child.
 	if (_quota > Genode::env()->ram_session()->avail()) {

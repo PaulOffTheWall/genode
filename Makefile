@@ -56,11 +56,15 @@ genode_build_dir:
 	printf 'REPOSITORIES += $$(GENODE_DIR)/repos/libports\n' >> $(BUILD_CONF)
 	printf 'REPOSITORIES += $$(GENODE_DIR)/repos/dom0\n' >> $(BUILD_CONF)
 
-tasks: hey namaste tumatmul
+tasks: hey idle namaste tumatmul
 
 hey:
 	$(MAKE) -j10 -C $(GENODE_BUILD_DIR) dom0/hey
 	cp $(GENODE_BUILD_DIR)/dom0/hey/hey dom0-client/
+
+idle:
+	$(MAKE) -j10 -C $(GENODE_BUILD_DIR) dom0/idle
+	cp $(GENODE_BUILD_DIR)/dom0/idle/idle dom0-client/
 
 namaste:
 	$(MAKE) -j10 -C $(GENODE_BUILD_DIR) dom0/namaste
