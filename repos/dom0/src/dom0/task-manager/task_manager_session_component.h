@@ -5,7 +5,6 @@
 
 #include <base/signal.h>
 #include <dom0/task_manager_session.h>
-#include <launchpad/launchpad.h>
 #include <os/attached_ram_dataspace.h>
 #include <os/server.h>
 #include <root/component.h>

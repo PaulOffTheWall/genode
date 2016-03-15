@@ -2,10 +2,12 @@
 
 #include <unordered_map>
 
+#include <base/service.h>
+#include <cap_session/connection.h>
+#include <init/child.h>
 #include <os/attached_ram_dataspace.h>
 #include <os/server.h>
 #include <os/signal_rpc_dispatcher.h>
-#include <launchpad/launchpad.h>
 #include <timer_session/connection.h>
 #include <util/noncopyable.h>
 #include <util/xml_node.h>
