@@ -56,6 +56,7 @@ public:
 
 	struct Meta_ex : Meta
 	{
+	public:
 		Meta_ex(
 			const std::string& name,
 			size_t quota,
