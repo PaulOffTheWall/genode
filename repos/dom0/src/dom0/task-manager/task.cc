@@ -12,6 +12,7 @@ Task::Child_policy::Child_policy(
 	Genode::Rpc_entrypoint& parent_entrypoint) :
 		_parent_services(&parent_services),
 		_parent_entrypoint(&parent_entrypoint),
+		_labeling_policy(name.c_str()),
 		_config_policy("config", config_ds, _parent_entrypoint),
 		_binary_policy("binary", binary_ds, _parent_entrypoint),
 		_active(true)
@@ -59,6 +60,11 @@ Genode::Service* Task::Child_policy::resolve_session_request(const char* service
 
 	PERR("Service %s requested by %s not found.", service_name, _name);
 	return nullptr;
+}
+
+void Task::Child_policy::filter_session_args(const char *service, char *args, Genode::size_t args_len)
+{
+	_labeling_policy.filter_session_args(service, args, args_len);
 }
 
 Task::Meta::Meta(const std::string& name, size_t quota, unsigned int priority) :

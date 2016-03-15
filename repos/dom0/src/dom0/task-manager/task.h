@@ -30,6 +30,7 @@ public:
 		virtual void exit(int exit_value) override;
 		virtual const char *name() const override;
 		Genode::Service *resolve_session_request(const char *service_name, const char *args);
+		void filter_session_args(const char *service, char *args, Genode::size_t args_len);
 
 		virtual bool active() const;
 
@@ -37,8 +38,9 @@ public:
 		char _name[32];
 		Genode::Service_registry* _parent_services;
 		Genode::Rpc_entrypoint* _parent_entrypoint;
-		Init::Child_policy_provide_rom_file  _config_policy;
-		Init::Child_policy_provide_rom_file  _binary_policy;
+		Init::Child_policy_enforce_labeling _labeling_policy;
+		Init::Child_policy_provide_rom_file _config_policy;
+		Init::Child_policy_provide_rom_file _binary_policy;
 		bool _active;
 	};
 
