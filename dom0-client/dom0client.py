@@ -7,42 +7,42 @@ import magicnumbers
 import os
 import re
 
-scriptDir = os.path.dirname(os.path.realpath(__file__)) + '/'
+script_dir = os.path.dirname(os.path.realpath(__file__)) + '/'
 
-class Dom0Session:
+class Dom0_session:
 	"""Manager for a connection to the dom0 server."""
-	def __init__(self, host='192.168.0.14', port=3001, tasksFile='tasks.xml'):
+	def __init__(self, host='192.168.0.14', port=3001, tasks_file='tasks.xml'):
 		"""Initialize connection and parse tasks description."""
 		self.connect(host, port)
-		self.readTasks(tasksFile)
+		self.read_tasks(tasks_file)
 
 	def connect(self, host='192.168.0.14', port=3001):
 		"""Connect to the Genode dom0 server."""
 		self.conn = socket.create_connection((host, port))
 		print('Connected.')
 
-	def readTasks(self, tasksFile='tasks.xml'):
+	def read_tasks(self, tasks_file='tasks.xml'):
 		"""Read XML file and enumerate binaries."""
 		# Read XML file and discard meta data.
-		self.tasks = open(scriptDir + tasksFile, 'rb').read()
-		tasksAscii = self.tasks.decode('ascii')
+		self.tasks = open(script_dir + tasks_file, 'rb').read()
+		tasks_ascii = self.tasks.decode('ascii')
 
 		# Enumerate binaries.
-		self.binaries = re.findall('<\s*pkg\s*>\s*(.+)\s*<\s*/pkg\s*>', tasksAscii)
+		self.binaries = re.findall('<\s*pkg\s*>\s*(.+)\s*<\s*/pkg\s*>', tasks_ascii)
 		self.binaries = list(set(self.binaries))
 
 		# Genode XML parser can't handle a lot of header things, so skip them.
-		firstNode = re.search('<\w+', tasksAscii)
-		self.tasks = self.tasks[firstNode.start():]
+		first_node = re.search('<\w+', tasks_ascii)
+		self.tasks = self.tasks[first_node.start():]
 
-	def sendDescs(self):
+	def send_descs(self):
 		"""Send task descriptions to the dom0 server."""
 		meta = struct.pack('II', magicnumbers.SEND_DESCS, len(self.tasks))
 		print('Sending tasks description.')
 		self.conn.send(meta)
 		self.conn.send(self.tasks)
 
-	def sendBins(self):
+	def send_bins(self):
 		"""Send binary files to the dom0 server."""
 		meta = struct.pack('II', magicnumbers.SEND_BINARIES, len(self.binaries))
 		print('Sending {} binar{}.'.format(len(self.binaries), 'y' if len(self.binaries) == 1 else 'ies'))
@@ -56,8 +56,8 @@ class Dom0Session:
 				break
 
 			print('Sending {}.'.format(name))
-			file = open(scriptDir + name, 'rb').read()
-			size = os.stat(scriptDir + name).st_size
+			file = open(script_dir + name, 'rb').read()
+			size = os.stat(script_dir + name).st_size
 			meta = struct.pack('15scI', name.encode('ascii'), b'\0', size)
 			self.conn.send(meta)
 			self.conn.send(file)
@@ -68,10 +68,10 @@ class Dom0Session:
 		meta = struct.pack('I', magicnumbers.START)
 		self.conn.send(meta)
 
-	def startEx(self):
+	def start_ex(self):
 		"""Send task descriptions and binaries, and start the execution."""
-		self.sendDescs()
-		self.sendBins()
+		self.send_descs()
+		self.send_bins()
 		self.start()
 
 	def stop(self):
@@ -86,7 +86,7 @@ class Dom0Session:
 		meta = struct.pack('I', magicnumbers.CLEAR)
 		self.conn.send(meta)
 
-	def getProfile(self):
+	def profile(self):
 		"""Get profiling information about all running tasks."""
 		print('Requesting profile data.')
 		meta = struct.pack('I', magicnumbers.GET_PROFILE)
@@ -103,20 +103,20 @@ class Dom0Session:
 		"""Close connection."""
 		self.conn.close();
 
-session = Dom0Session()
+session = Dom0_session()
 
 def help():
 	print('''
 	Available commands:
-		session.sendDescs()		: Send task descriptions to server.
-		session.sendBins()		: Send binaries to server.
+		session.send_descs()		: Send task descriptions to server.
+		session.send_bins()		: Send binaries to server.
 		session.start()			: Start tasks on server.
-		session.startEx()		: Do all of the above in order.
+		session.start_ex()		: Do all of the above in order.
 		session.stop()			: Stop all running tasks on server.
 		session.clear()			: Stop and clear all tasks on the server. Binaries will be kept.
-		session.getProfile()		: Request profiling data from server.
+		session.profile()		: Request profiling data from server.
 
-		session.readTasks([tasksFile])	: Load tasks file (default tasks.xml).
+		session.read_tasks([tasks_file])	: Load tasks file (default tasks.xml).
 		session.connect([host, port])	: Connect to dom0 server (default 192.168.0.14:3001).
 		session.close()			: Close connection.
 
