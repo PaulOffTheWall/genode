@@ -61,6 +61,32 @@ Genode::Service* Task::ChildPolicy::resolve_session_request(const char* serviceN
 	return nullptr;
 }
 
+Task::Meta::Meta(const std::string& name, size_t quota) :
+	ram{},
+	cpu{name.c_str()},
+	rm{},
+	pd{}
+{
+	ram.ref_account(Genode::env()->ram_session_cap());
+	if (Genode::env()->ram_session()->transfer_quota(ram.cap(), quota) != 0)
+	{
+		PWRN("Failed to transfer RAM quota to child %s", name.c_str());
+	}
+}
+
+Task::MetaEx::MetaEx(
+	const std::string& name,
+	size_t quota,
+	Genode::Service_registry& parentServices,
+	Genode::Dataspace_capability configDs,
+	Genode::Dataspace_capability binaryDs,
+	Genode::Rpc_entrypoint& parentEntrypoint) :
+		Meta{name, quota},
+		policy{name, parentServices, configDs, binaryDs, parentEntrypoint},
+		child{binaryDs, pd.cap(), ram.cap(), cpu.cap(), rm.cap(), &parentEntrypoint, &policy}
+{
+}
+
 Task::Task(
 	Server::Entrypoint& ep,
 	std::unordered_map<std::string, Genode::Attached_ram_dataspace>& binaries,
@@ -87,12 +113,7 @@ Task::Task(
 		_killDispatcher{ep, *this, &Task::_killCrit},
 		_idleDispatcher{ep, *this, &Task::_idle},
 		_childEp{&cap, 12 * 1024, _name.c_str(), false},
-		_ram{},
-		_cpu{_name.c_str()},
-		_rm{},
-		_pd{},
-		_childPolicy{nullptr},
-		_child{nullptr}
+		_meta(nullptr)
 {
 	const Genode::Xml_node& configNode = node.sub_node("config");
 	std::strncpy(_config.local_addr<char>(), configNode.addr(), configNode.size());
@@ -105,7 +126,7 @@ Task::~Task()
 
 void Task::run()
 {
-	// Register timeout handlers.
+	// (Re-)Register timeout handlers.
 	_startTimer.sigh(_startDispatcher);
 	_killTimer.sigh(_killDispatcher);
 
@@ -122,11 +143,9 @@ void Task::run()
 void Task::stop()
 {
 	PINF("Stopping task %s\n", _name.c_str());
-	if (_child)
-	{
-	}
+	_kill();
 
-	// "Stop" timers.
+	// "Stop" timers. Apparently there is no way to stop a running timer, so instead we let it trigger an idle method.
 	_startTimer.sigh(_idleDispatcher);
 	_killTimer.sigh(_idleDispatcher);
 	_startTimer.trigger_once(0);
@@ -138,6 +157,11 @@ std::string Task::name() const
 	return _name;
 }
 
+Task::MetaEx* const Task::meta()
+{
+	return _meta;
+}
+
 std::string Task::_makeName() const
 {
 	char id[4];
@@ -147,7 +171,7 @@ std::string Task::_makeName() const
 
 void Task::_start(unsigned)
 {
-	if (_child)
+	if (_meta)
 	{
 		PINF("Trying to start %s but previous instance still running. Killing first.\n", _name.c_str());
 		_kill();
@@ -174,18 +198,10 @@ void Task::_start(unsigned)
 		return;
 	}
 
-	// Transfer RAM to child.
-	_ram.ref_account(Genode::env()->ram_session_cap());
-	if (Genode::env()->ram_session()->transfer_quota(_ram.cap(), _quota) != 0)
-	{
-		PERR("Failed to transfer RAM quota to child %s", _name.c_str());
-		return;
-	}
-
 	try
 	{
-		_childPolicy = new (&_heap) ChildPolicy(_name, _parentServices, _config.cap(), _binaries.at(_binaryName).cap(), _childEp);
-		_child = new (&_heap) Genode::Child(binIt->second.cap(), _pd.cap(), _ram.cap(), _cpu.cap(), _rm.cap(), &_childEp, _childPolicy);
+		PINF("Allocating child meta data on heap.");
+		_meta = new (&_heap) MetaEx(_name, _quota, _parentServices, _config.cap(), ds.cap(), _childEp);
 		_childEp.activate();
 	}
 	catch (Genode::Cpu_session::Thread_creation_failed)
@@ -200,31 +216,23 @@ void Task::_start(unsigned)
 
 void Task::_killCrit(unsigned)
 {
-	if (_child)
-	{
-		PINF("Critical time reached for %s", _name.c_str());
-		_kill();
-	}
+	PINF("Critical time reached for %s", _name.c_str());
+	_kill();
 }
 
 void Task::_kill()
 {
-	if (_child)
+	if (_meta)
 	{
-		if (_childPolicy->active())
+		if (_meta->policy.active())
 		{
 			PINF("Killing %s", _name.c_str());
-			_child->exit(-1);
+			_meta->child.exit(-1);
 		}
-		if (_childPolicy)
+		if (_meta)
 		{
-			_heap.free(_childPolicy, sizeof(ChildPolicy));
-			_childPolicy = nullptr;
-		}
-		if (_child)
-		{
-			_heap.free(_child, sizeof(Genode::Child));
-			_child = nullptr;
+			Genode::destroy(_heap, _meta);
+			_meta = nullptr;
 		}
 	}
 }
@@ -236,7 +244,7 @@ void Task::_idle(unsigned)
 
 bool Task::_checkDynamicElf(Genode::Attached_ram_dataspace& ds)
 {
-	/* read program header */
+	// Read program header.
 	Genode::Elf_binary elf((Genode::addr_t)ds.local_addr<char>());
 	return elf.is_dynamically_linked();
 }

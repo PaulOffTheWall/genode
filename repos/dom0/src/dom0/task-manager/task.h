@@ -16,6 +16,7 @@
 class Task : Genode::Noncopyable
 {
 public:
+	// Policy for handling binary and service requests.
 	struct ChildPolicy : Genode::Child_policy
 	{
 	public:
@@ -41,6 +42,32 @@ public:
 		bool _active;
 	};
 
+	// Meta data that needs to be dynamically allocated on each start request.
+	struct Meta
+	{
+	public:
+		Meta(const std::string& name, size_t quota);
+
+		Genode::Ram_connection ram;
+		Genode::Cpu_connection cpu;
+		Genode::Rm_connection rm;
+		Genode::Pd_connection pd;
+	};
+
+	struct MetaEx : Meta
+	{
+		MetaEx(
+			const std::string& name,
+			size_t quota,
+			Genode::Service_registry& parentServices,
+			Genode::Dataspace_capability configDs,
+			Genode::Dataspace_capability binaryDs,
+			Genode::Rpc_entrypoint& parentEntrypoint);
+
+		ChildPolicy policy;
+		Genode::Child child;
+	};
+
 	Task(
 		Server::Entrypoint& ep,
 		std::unordered_map<std::string, Genode::Attached_ram_dataspace>& binaries,
@@ -53,6 +80,7 @@ public:
 	void run();
 	void stop();
 	std::string name() const;
+	MetaEx* const meta();
 
 protected:
 	// All binaries loaded by the task manager.
@@ -60,6 +88,8 @@ protected:
 
 	// Heap on which to create the init child.
 	Genode::Sliced_heap& _heap;
+
+	// Core services provided by the parent.
 	Genode::Service_registry& _parentServices;
 
 	// XML task description.
@@ -87,15 +117,8 @@ protected:
 	// Child process entry point.
 	Genode::Rpc_entrypoint _childEp;
 
-	// Service connections required for Genode child initialization.
-	Genode::Ram_connection _ram;
-	Genode::Cpu_connection _cpu;
-	Genode::Rm_connection _rm;
-	Genode::Pd_connection _pd;
-
-	ChildPolicy* _childPolicy;
-	// Actual init child process.
-	Genode::Child* _child;
+	// Child meta data.
+	MetaEx* _meta;
 
 	// Combine ID and binary name into a unique name, e.g. 01.namaste
 	std::string _makeName() const;

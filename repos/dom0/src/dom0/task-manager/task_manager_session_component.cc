@@ -108,6 +108,7 @@ void TaskManagerSessionComponent::_updateProfileData()
 	size_t numSubjects = _trace.subjects(subjects, MAX_NUM_SUBJECTS);
 	Genode::Trace::Subject_info info;
 	std::string label;
+	std::string thread;
 	Genode::Trace::Subject_info::State state;
 
 	// Xml_generator directly writes XML data into the buffer on construction, explaining the heavy recursion here.
@@ -117,6 +118,7 @@ void TaskManagerSessionComponent::_updateProfileData()
 		{
 			info = _trace.subject_info(*subject);
 			label = info.session_label().string();
+			thread = info.thread_name().string();
 			state = info.state();
 			xml.node("subject", [&]()
 			{
@@ -127,7 +129,7 @@ void TaskManagerSessionComponent::_updateProfileData()
 				});
 				xml.node("thread", [&]()
 				{
-					xml.append(info.thread_name().string());
+					xml.append(thread.c_str());
 				});
 				xml.node("state", [&]()
 				{
@@ -143,15 +145,39 @@ void TaskManagerSessionComponent::_updateProfileData()
 				Task* task = nullptr;
 				if (leafPos < std::string::npos)
 				{
-					task = _taskByName(label.substr(leafPos + 16));
+					std::string process = label.substr(leafPos + 16);
+					if (process == thread)
+					{
+						task = _taskByName(label.substr(leafPos + 16));
+					}
 				}
-				if (task)
+				if (task && task->meta())
 				{
-					// Add more detail to tasks started by us.
+					// Add more detail to tasks started by us while their process still exists.
 					xml.node("task-info", [&]()
 					{
 						xml.node("quota", [&]()
 						{
+							xml.append(std::to_string(task->meta()->ram.quota()).c_str());
+						});
+						xml.node("used", [&]()
+						{
+							xml.append(std::to_string(task->meta()->ram.used()).c_str());
+						});
+					});
+				}
+				// Check if this is task-manager itself.
+				else if (label.rfind("task-manager") == label.length() - 12 && thread == "task-manager")
+				{
+					xml.node("task-info", [&]()
+					{
+						xml.node("quota", [&]()
+						{
+							xml.append(std::to_string(Genode::env()->ram_session()->quota()).c_str());
+						});
+						xml.node("used", [&]()
+						{
+							xml.append(std::to_string(Genode::env()->ram_session()->used()).c_str());
 						});
 					});
 				}
