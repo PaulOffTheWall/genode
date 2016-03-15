@@ -8,7 +8,7 @@
 
 #include <string>
 
-TaskManagerSessionComponent::TaskManagerSessionComponent(Server::Entrypoint& ep) :
+Task_manager_session_component::Task_manager_session_component(Server::Entrypoint& ep) :
 	_ep{ep},
 	_binaries{},
 	_heap{Genode::env()->ram_session(), Genode::env()->rm_session()},
@@ -37,11 +37,11 @@ TaskManagerSessionComponent::TaskManagerSessionComponent(Server::Entrypoint& ep)
 
 }
 
-TaskManagerSessionComponent::~TaskManagerSessionComponent()
+Task_manager_session_component::~Task_manager_session_component()
 {
 }
 
-void TaskManagerSessionComponent::addTasks(Genode::Ram_dataspace_capability xmlDsCap)
+void Task_manager_session_component::addTasks(Genode::Ram_dataspace_capability xmlDsCap)
 {
 	Genode::Rm_session* rm = Genode::env()->rm_session();
 	const char* xml = rm->attach(xmlDsCap);
@@ -56,13 +56,13 @@ void TaskManagerSessionComponent::addTasks(Genode::Ram_dataspace_capability xmlD
 	rm->detach(xml);
 }
 
-void TaskManagerSessionComponent::clearTasks()
+void Task_manager_session_component::clearTasks()
 {
 	PDBG("Clearing %d task%s. Binaries still held.", _tasks.size(), _tasks.size() == 1 ? "" : "s");
 	_tasks.clear();
 }
 
-Genode::Ram_dataspace_capability TaskManagerSessionComponent::binaryDs(Genode::Ram_dataspace_capability nameDsCap, size_t size)
+Genode::Ram_dataspace_capability Task_manager_session_component::binaryDs(Genode::Ram_dataspace_capability nameDsCap, size_t size)
 {
 	Genode::Rm_session* rm = Genode::env()->rm_session();
 	const char* name = rm->attach(nameDsCap);
@@ -76,7 +76,7 @@ Genode::Ram_dataspace_capability TaskManagerSessionComponent::binaryDs(Genode::R
 	return ds.cap();
 }
 
-void TaskManagerSessionComponent::start()
+void Task_manager_session_component::start()
 {
 	PINF("Starting %d task%s.", _tasks.size(), _tasks.size() == 1 ? "" : "s");
 	for (Task& task : _tasks)
@@ -85,7 +85,7 @@ void TaskManagerSessionComponent::start()
 	}
 }
 
-void TaskManagerSessionComponent::stop()
+void Task_manager_session_component::stop()
 {
 	PINF("Stopping all tasks.");
 	for (Task& task : _tasks)
@@ -94,13 +94,13 @@ void TaskManagerSessionComponent::stop()
 	}
 }
 
-Genode::Ram_dataspace_capability TaskManagerSessionComponent::profileData()
+Genode::Ram_dataspace_capability Task_manager_session_component::profileData()
 {
 	_updateProfileData();
 	return _profileData.cap();
 }
 
-void TaskManagerSessionComponent::_updateProfileData()
+void Task_manager_session_component::_updateProfileData()
 {
 	static const size_t MAX_NUM_SUBJECTS = 32;
 
@@ -186,7 +186,7 @@ void TaskManagerSessionComponent::_updateProfileData()
 	});
 }
 
-Task* TaskManagerSessionComponent::_taskByName(const std::string& name)
+Task* Task_manager_session_component::_taskByName(const std::string& name)
 {
 	for (Task& task : _tasks)
 	{
@@ -198,25 +198,25 @@ Task* TaskManagerSessionComponent::_taskByName(const std::string& name)
 	return nullptr;
 }
 
-Genode::Number_of_bytes TaskManagerSessionComponent::_launchpadQuota()
+Genode::Number_of_bytes Task_manager_session_component::_launchpadQuota()
 {
 	Genode::Xml_node launchpadNode = Genode::config()->xml_node().sub_node("launchpad");
 	return launchpadNode.attribute_value<Genode::Number_of_bytes>("quota", 10 * 1024 * 1024);
 }
 
-Genode::Number_of_bytes TaskManagerSessionComponent::_traceQuota()
+Genode::Number_of_bytes Task_manager_session_component::_traceQuota()
 {
 	Genode::Xml_node launchpadNode = Genode::config()->xml_node().sub_node("trace");
 	return launchpadNode.attribute_value<Genode::Number_of_bytes>("quota", 1024 * 1024);
 }
 
-Genode::Number_of_bytes TaskManagerSessionComponent::_traceBufSize()
+Genode::Number_of_bytes Task_manager_session_component::_traceBufSize()
 {
 	Genode::Xml_node launchpadNode = Genode::config()->xml_node().sub_node("trace");
 	return launchpadNode.attribute_value<Genode::Number_of_bytes>("buf-size", 64 * 1024);
 }
 
-Genode::Number_of_bytes TaskManagerSessionComponent::_profileDsSize()
+Genode::Number_of_bytes Task_manager_session_component::_profileDsSize()
 {
 	Genode::Xml_node launchpadNode = Genode::config()->xml_node().sub_node("profile");
 	return launchpadNode.attribute_value<Genode::Number_of_bytes>("ds-size", 128 * 1024);

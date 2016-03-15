@@ -4,10 +4,10 @@
 #include <base/rpc_client.h>
 #include <dom0/task_manager_session.h>
 
-struct TaskManagerSessionClient : Genode::Rpc_client<TaskManagerSession>
+struct Task_manager_session_client : Genode::Rpc_client<Task_manager_session>
 {
-	TaskManagerSessionClient(Genode::Capability<TaskManagerSession> cap) :
-		Genode::Rpc_client<TaskManagerSession>(cap) { }
+	Task_manager_session_client(Genode::Capability<Task_manager_session> cap) :
+		Genode::Rpc_client<Task_manager_session>(cap) { }
 
 	void addTasks(Genode::Ram_dataspace_capability xmlDsCap)
 	{

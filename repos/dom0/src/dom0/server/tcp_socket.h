@@ -17,15 +17,15 @@ extern "C" {
 
 
 
-class TcpSocket
+class Tcp_socket
 {
 public:
-	TcpSocket();
+	Tcp_socket();
 
 	virtual int connect() = 0;
 	virtual void disconnect() = 0;
 
-	virtual ~TcpSocket()
+	virtual ~Tcp_socket()
 	{
 	}
 

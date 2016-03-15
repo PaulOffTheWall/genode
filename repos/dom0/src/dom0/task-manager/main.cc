@@ -8,7 +8,7 @@
 
 struct Main
 {
-	TaskManagerRootComponent taskManagerRoot;
+	Task_manager_root_component taskManagerRoot;
 
 	Main(Server::Entrypoint& ep) :
 		taskManagerRoot(&ep, Genode::env()->heap())

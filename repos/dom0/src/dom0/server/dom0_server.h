@@ -3,12 +3,12 @@
 #include "tcp_socket.h"
 #include <dom0/task_manager_connection.h>
 
-class Dom0Server : public TcpSocket
+class Dom0_server : public Tcp_socket
 {
 public:
-	Dom0Server();
+	Dom0_server();
 
-	~Dom0Server();
+	~Dom0_server();
 
 	int connect();
 
@@ -20,5 +20,5 @@ private:
 	int _listenSocket;
 	struct sockaddr_in _inAddr;
 	sockaddr _targetAddr;
-	TaskManagerConnection _taskManager;
+	Task_manager_connection _taskManager;
 };

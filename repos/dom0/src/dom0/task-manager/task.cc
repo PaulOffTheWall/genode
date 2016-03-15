@@ -4,7 +4,7 @@
 #include <cstring>
 #include <vector>
 
-Task::ChildPolicy::ChildPolicy(
+Task::Child_policy::Child_policy(
 	const std::string& name,
 	Genode::Service_registry& parentServices,
 	Genode::Dataspace_capability configDs,
@@ -19,23 +19,23 @@ Task::ChildPolicy::ChildPolicy(
 	std::strncpy(_name, name.c_str(), 32);
 }
 
-void Task::ChildPolicy::exit(int exitValue)
+void Task::Child_policy::exit(int exitValue)
 {
 	_active = false;
 	PDBG("child %s exited with exit value %d", name(), exitValue);
 }
 
-const char* Task::ChildPolicy::name() const
+const char* Task::Child_policy::name() const
 {
 	return _name;
 }
 
-bool Task::ChildPolicy::active() const
+bool Task::Child_policy::active() const
 {
 	return _active;
 }
 
-Genode::Service* Task::ChildPolicy::resolve_session_request(const char* serviceName, const char* args)
+Genode::Service* Task::Child_policy::resolve_session_request(const char* serviceName, const char* args)
 {
 	Genode::Service* service = nullptr;
 
@@ -74,7 +74,7 @@ Task::Meta::Meta(const std::string& name, size_t quota) :
 	}
 }
 
-Task::MetaEx::MetaEx(
+Task::Meta_ex::Meta_ex(
 	const std::string& name,
 	size_t quota,
 	Genode::Service_registry& parentServices,
@@ -157,7 +157,7 @@ std::string Task::name() const
 	return _name;
 }
 
-Task::MetaEx* const Task::meta()
+Task::Meta_ex* const Task::meta()
 {
 	return _meta;
 }
@@ -201,7 +201,7 @@ void Task::_start(unsigned)
 	try
 	{
 		PINF("Allocating child meta data on heap.");
-		_meta = new (&_heap) MetaEx(_name, _quota, _parentServices, _config.cap(), ds.cap(), _childEp);
+		_meta = new (&_heap) Meta_ex(_name, _quota, _parentServices, _config.cap(), ds.cap(), _childEp);
 		_childEp.activate();
 	}
 	catch (Genode::Cpu_session::Thread_creation_failed)

@@ -17,10 +17,10 @@ class Task : Genode::Noncopyable
 {
 public:
 	// Policy for handling binary and service requests.
-	struct ChildPolicy : Genode::Child_policy
+	struct Child_policy : Genode::Child_policy
 	{
 	public:
-		ChildPolicy(
+		Child_policy(
 			const std::string& name,
 			Genode::Service_registry& parentServices,
 			Genode::Dataspace_capability configDs,
@@ -54,9 +54,9 @@ public:
 		Genode::Pd_connection pd;
 	};
 
-	struct MetaEx : Meta
+	struct Meta_ex : Meta
 	{
-		MetaEx(
+		Meta_ex(
 			const std::string& name,
 			size_t quota,
 			Genode::Service_registry& parentServices,
@@ -64,7 +64,7 @@ public:
 			Genode::Dataspace_capability binaryDs,
 			Genode::Rpc_entrypoint& parentEntrypoint);
 
-		ChildPolicy policy;
+		Child_policy policy;
 		Genode::Child child;
 	};
 
@@ -80,7 +80,7 @@ public:
 	void run();
 	void stop();
 	std::string name() const;
-	MetaEx* const meta();
+	Meta_ex* const meta();
 
 protected:
 	// All binaries loaded by the task manager.
@@ -118,7 +118,7 @@ protected:
 	Genode::Rpc_entrypoint _childEp;
 
 	// Child meta data.
-	MetaEx* _meta;
+	Meta_ex* _meta;
 
 	// Combine ID and binary name into a unique name, e.g. 01.namaste
 	std::string _makeName() const;

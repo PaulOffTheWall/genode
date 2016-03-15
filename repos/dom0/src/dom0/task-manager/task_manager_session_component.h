@@ -13,11 +13,11 @@
 
 #include "task.h"
 
-struct TaskManagerSessionComponent : Genode::Rpc_object<TaskManagerSession>
+struct Task_manager_session_component : Genode::Rpc_object<Task_manager_session>
 {
 public:
-	TaskManagerSessionComponent(Server::Entrypoint& ep);
-	virtual ~TaskManagerSessionComponent();
+	Task_manager_session_component(Server::Entrypoint& ep);
+	virtual ~Task_manager_session_component();
 
 	// Create tasks in idle state from XML description.
 	void addTasks(Genode::Ram_dataspace_capability xmlDsCap);
@@ -59,11 +59,11 @@ protected:
 	static Genode::Number_of_bytes _profileDsSize();
 };
 
-struct TaskManagerRootComponent : Genode::Root_component<TaskManagerSessionComponent>
+struct Task_manager_root_component : Genode::Root_component<Task_manager_session_component>
 {
 public:
-	TaskManagerRootComponent(Server::Entrypoint* ep, Genode::Allocator *allocator) :
-		Genode::Root_component<TaskManagerSessionComponent>(&ep->rpc_ep(), allocator),
+	Task_manager_root_component(Server::Entrypoint* ep, Genode::Allocator *allocator) :
+		Genode::Root_component<Task_manager_session_component>(&ep->rpc_ep(), allocator),
 		_ep(*ep)
 	{
 		PDBG("Creating root component.");
@@ -72,9 +72,9 @@ public:
 protected:
 	Server::Entrypoint& _ep;
 
-	TaskManagerSessionComponent* _create_session(const char *args)
+	Task_manager_session_component* _create_session(const char *args)
 	{
 		PDBG("Creating Task Manager session.");
-		return new (md_alloc()) TaskManagerSessionComponent(_ep);
+		return new (md_alloc()) Task_manager_session_component(_ep);
 	}
 };

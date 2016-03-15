@@ -11,7 +11,7 @@
 #include "config.h"
 #include "communication_magic_numbers.h"
 
-Dom0Server::Dom0Server() :
+Dom0_server::Dom0_server() :
 	_listenSocket(0),
 	_inAddr{0},
 	_targetAddr{0},
@@ -58,12 +58,12 @@ Dom0Server::Dom0Server() :
 	PINF("Listening...\n");
 }
 
-Dom0Server::~Dom0Server()
+Dom0_server::~Dom0_server()
 {
 	disconnect();
 }
 
-int Dom0Server::connect()
+int Dom0_server::connect()
 {
 	socklen_t len = sizeof(_targetAddr);
 	_targetSocket = lwip_accept(_listenSocket, &_targetAddr, &len);
@@ -77,7 +77,7 @@ int Dom0Server::connect()
 	return _targetSocket;
 }
 
-void Dom0Server::serve()
+void Dom0_server::serve()
 {
 	int message = 0;
 	while (true)
@@ -172,7 +172,7 @@ void Dom0Server::serve()
 	}
 }
 
-void Dom0Server::disconnect()
+void Dom0_server::disconnect()
 {
 	lwip_close(_targetSocket);
 	PERR("Target socket closed.");

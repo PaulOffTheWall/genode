@@ -3,14 +3,14 @@
 #include <dom0/task_manager_client.h>
 #include <base/connection.h>
 
-struct TaskManagerConnection : Genode::Connection<TaskManagerSession>, TaskManagerSessionClient
+struct Task_manager_connection : Genode::Connection<Task_manager_session>, Task_manager_session_client
 {
-	TaskManagerConnection() :
+	Task_manager_connection() :
 		/* create session */
-		Genode::Connection<TaskManagerSession>(session("foo, ram_quota=4K")),
+		Genode::Connection<Task_manager_session>(session("foo, ram_quota=4K")),
 
 		/* initialize RPC interface */
-		TaskManagerSessionClient(cap())
+		Task_manager_session_client(cap())
 	{
 	}
 };

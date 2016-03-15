@@ -5,7 +5,7 @@ int main(int argc, char* argv[])
 {
 	PDBG("dom0: Hello!\n");
 
-	Dom0Server server;
+	Dom0_server server;
 
 	while (true)
 	{
