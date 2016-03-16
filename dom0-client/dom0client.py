@@ -12,7 +12,7 @@ script_dir = os.path.dirname(os.path.realpath(__file__)) + '/'
 class Dom0_session:
 	"""Manager for a connection to the dom0 server."""
 	def __init__(self, host='192.168.0.14', port=3001, tasks_file='tasks.xml'):
-		"""Initialize connection and parse tasks description."""
+		"""Initialize connection and parse task descriptions."""
 		self.connect(host, port)
 		self.read_tasks(tasks_file)
 
@@ -94,17 +94,16 @@ class Dom0_session:
 
 		size = int.from_bytes(self.conn.recv(4), 'little')
 		xml = b''
-		print('Receiving profiling data of size {}'.format(size))
 		while len(xml) < size:
 			xml += self.conn.recv(size)
 		file = open(script_dir + log_file, 'w')
 		file.write(xml.decode('utf-8'))
+		print('Profiling data of size {} saved to {}'.format(size, log_file))
 
 	def close(self):
 		"""Close connection."""
 		self.conn.close();
 
-session = Dom0_session()
 
 def help():
 	print('''
@@ -123,7 +122,3 @@ def help():
 
 		help()					: Print this message.
 	''')
-
-help()
-
-code.interact(local=locals())
