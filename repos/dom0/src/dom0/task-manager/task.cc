@@ -30,20 +30,19 @@ void Task::Child_policy::exit(int exit_value)
 
 	_task->_stop_kill_timer();
 	Task::Event::Type type;
-	if (exit_value == 0)
+	switch (exit_value)
 	{
-		type = Event::EXIT;
-	}
-	else if (exit_value == 17)
-	{
-		type = Event::EXIT_CRITICAL;
-	}
-	else
-	{
-		type = Event::EXIT_ERROR;
+		case 0:
+			type = Event::EXIT; break;
+		case 17:
+			type = Event::EXIT_CRITICAL; break;
+		case 19:
+			type = Event::EXIT_EXTERNAL; break;
+		default:
+			type = Event::EXIT_ERROR;
 	}
 
-	Task::log_profile_data(type, _task->_name, _task->_shared.timer.elapsed_ms(), _task->_shared);
+	Task::log_profile_data(type, _task->_name, _task->_shared);
 	Task::_child_destructor.submit_for_destruction(_task);
 	_active = false;
 }
@@ -118,6 +117,20 @@ Task::Meta_ex::Meta_ex(
 {
 }
 
+const char* Task::Event::type_name(Type type)
+{
+	switch (type)
+	{
+		case START: return "START";
+		case EXIT: return "EXIT";
+		case EXIT_CRITICAL: return "EXIT_CRITICAL";
+		case EXIT_ERROR: return "EXIT_ERROR";
+		case EXIT_EXTERNAL: return "EXIT_EXTERNAL";
+		case EXTERNAL: return "EXTERNAL";
+		default: return "UNKNOWN";
+	}
+}
+
 Task::Shared_data::Shared_data(size_t trace_quota, size_t trace_buf_size) :
 	binaries{},
 	heap{Genode::env()->ram_session(), Genode::env()->rm_session()},
@@ -174,9 +187,8 @@ void Task::run()
 void Task::stop()
 {
 	PINF("Stopping task %s\n", _name.c_str());
-	_kill();
-
 	_stop_timers();
+	_kill(19);
 }
 
 std::string Task::name() const
@@ -201,15 +213,22 @@ Task* Task::task_by_name(std::list<Task>& tasks, const std::string& name)
 	return nullptr;
 }
 
-void Task::log_profile_data(Event::Type type, const std::string& task_name, unsigned long time_stamp, Shared_data& shared)
+void Task::log_profile_data(Event::Type type, const std::string& task_name, Shared_data& shared)
 {
 	static const size_t MAX_NUM_SUBJECTS = 32;
+	// Lock to avoid race conditions as this may be called by the child's thread.
+	Genode::Lock::Guard guard(shared.log_lock);
 
 	Genode::Trace::Subject_id subjects[MAX_NUM_SUBJECTS];
-	size_t num_subjects = shared.trace.subjects(subjects, MAX_NUM_SUBJECTS);
+	const size_t num_subjects = shared.trace.subjects(subjects, MAX_NUM_SUBJECTS);
 	Genode::Trace::Subject_info info;
 
-	Event event{type, task_name, time_stamp, {}};
+	shared.event_log.emplace_back();
+	Event& event = shared.event_log.back();
+
+	event.type = type;
+	event.task_name = task_name;
+	event.time_stamp = shared.timer.elapsed_ms();
 
 	for (Genode::Trace::Subject_id* subject = subjects; subject < subjects + num_subjects; ++subject)
 	{
@@ -307,6 +326,8 @@ void Task::_start(unsigned)
 	{
 		PWRN("Failed to create child - unknown reason");
 	}
+
+	log_profile_data(Event::START, _name, _shared);
 }
 
 Task::Child_destructor_thread::Child_destructor_thread() :
@@ -345,19 +366,16 @@ Task::Child_destructor_thread Task::_child_destructor;
 void Task::_kill_crit(unsigned)
 {
 	PINF("Critical time reached for %s", _name.c_str());
-	if (_meta->policy.active())
-	{
-		PINF("Force-exiting %s", _name.c_str());
-		_meta->child.exit(17);
-	}
+	_kill(17);
 }
 
-void Task::_kill()
+void Task::_kill(int exit_value)
 {
-	if (_meta->policy.active())
+	// Task might have a valid _meta and be inactive for the short time between submitting the task for destruction and the actual destruction. In that case we do nothing.
+	if (_meta && _meta->policy.active())
 	{
 		PINF("Force-exiting %s", _name.c_str());
-		_meta->child.exit(1);
+		_meta->child.exit(exit_value);
 	}
 }
 

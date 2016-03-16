@@ -86,7 +86,7 @@ class Dom0_session:
 		meta = struct.pack('I', magicnumbers.CLEAR)
 		self.conn.send(meta)
 
-	def profile(self):
+	def profile(self, log_file='log.xml'):
 		"""Get profiling information about all running tasks."""
 		print('Requesting profile data.')
 		meta = struct.pack('I', magicnumbers.GET_PROFILE)
@@ -97,7 +97,8 @@ class Dom0_session:
 		print('Receiving profiling data of size {}'.format(size))
 		while len(xml) < size:
 			xml += self.conn.recv(size)
-		print(xml.decode('utf-8'))
+		file = open(script_dir + log_file, 'w')
+		file.write(xml.decode('utf-8'))
 
 	def close(self):
 		"""Close connection."""
@@ -108,19 +109,19 @@ session = Dom0_session()
 def help():
 	print('''
 	Available commands:
-		session.send_descs()		: Send task descriptions to server.
-		session.send_bins()		: Send binaries to server.
-		session.start()			: Start tasks on server.
-		session.start_ex()		: Do all of the above in order.
-		session.stop()			: Stop all running tasks on server.
-		session.clear()			: Stop and clear all tasks on the server. Binaries will be kept.
-		session.profile()		: Request profiling data from server.
+		session.send_descs()			: Send task descriptions to server.
+		session.send_bins()			: Send binaries to server.
+		session.start()				: Start tasks on server.
+		session.start_ex()			: Do all of the above in order.
+		session.stop()				: Stop all running tasks on server.
+		session.clear()				: Stop and clear all tasks on the server. Binaries will be kept.
+		session.profile([log_file])		: Request profiling data from server and store in log_file (default log.xml).
 
 		session.read_tasks([tasks_file])	: Load tasks file (default tasks.xml).
-		session.connect([host, port])	: Connect to dom0 server (default 192.168.0.14:3001).
-		session.close()			: Close connection.
+		session.connect([host, port])		: Connect to dom0 server (default 192.168.0.14:3001).
+		session.close()				: Close connection.
 
-		help()				: Print this message.
+		help()					: Print this message.
 	''')
 
 help()

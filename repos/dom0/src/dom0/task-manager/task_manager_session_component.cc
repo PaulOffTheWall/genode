@@ -90,14 +90,16 @@ void Task_manager_session_component::stop()
 
 Genode::Ram_dataspace_capability Task_manager_session_component::profile_data()
 {
+	Genode::Lock::Guard guard(_shared.log_guard);
 	// Xml_generator directly writes XML data into the buffer on construction, explaining the heavy recursion here.
+	PDBG("Generating event log. %d events have occurred.", _shared.event_log.size());
 	Genode::Xml_generator xml(_profile_data.local_addr<char>(), _profile_data.size(), "event-log", [&]()
 	{
 		for (const Task::Event& event : _shared.event_log)
 		{
 			xml.node("event", [&]()
 			{
-				xml.attribute("type", std::to_string(event.type).c_str());
+				xml.attribute("type", Task::Event::type_name(event.type));
 				xml.attribute("task", event.task_name.c_str());
 				xml.attribute("time-stamp", std::to_string(event.time_stamp).c_str());
 

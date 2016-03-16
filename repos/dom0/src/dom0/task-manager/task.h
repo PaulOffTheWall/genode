@@ -99,7 +99,9 @@ public:
 			bool managed;
 			Managed_info managed_info;
 		};
-		enum Type { START = 0, EXIT, EXIT_CRITICAL, EXIT_ERROR, EXTERNAL };
+		enum Type { START = 0, EXIT, EXIT_CRITICAL, EXIT_ERROR, EXIT_EXTERNAL, EXTERNAL };
+
+		static const char* type_name(Type type);
 
 		// Event trigger type.
 		Type type;
@@ -138,6 +140,9 @@ public:
 
 		// List instead of vector because reallocation would invalidate dataspaces.
 		std::list<Task> tasks;
+
+		// Event logging may be called from multiple threads.
+		Genode::Lock log_lock;
 	};
 
 	Task(Server::Entrypoint& ep, Genode::Cap_connection& cap, Shared_data& shared, const Genode::Xml_node& node);
@@ -149,7 +154,7 @@ public:
 	bool running() const;
 
 	static Task* task_by_name(std::list<Task>& tasks, const std::string& name);
-	static void log_profile_data(Event::Type type, const std::string& task_name, unsigned long time_stamp, Shared_data& shared);
+	static void log_profile_data(Event::Type type, const std::string& task_name, Shared_data& shared);
 
 protected:
 	class Child_destructor_thread : Genode::Thread<2*4096>
@@ -204,7 +209,7 @@ protected:
 	// Start task once.
 	void _start(unsigned);
 	void _kill_crit(unsigned);
-	void _kill();
+	void _kill(int exit_value = 1);
 	void _idle(unsigned);
 	void _stop_timers();
 	void _stop_kill_timer();
