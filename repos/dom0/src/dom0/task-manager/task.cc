@@ -151,6 +151,7 @@ Task::Task(Server::Entrypoint& ep, Genode::Cap_connection& cap, Shared_data& sha
 		_binary_name   {_get_node_value(node, "pkg", 32, "")},
 		_config{Genode::env()->ram_session(), node.sub_node("config").size()},
 		_name{_make_name()},
+		_paused{true},
 		_start_timer{},
 		_kill_timer{},
 		_start_dispatcher{ep, *this, &Task::_start},
@@ -170,6 +171,8 @@ Task::~Task()
 
 void Task::run()
 {
+	_paused = false;
+
 	// (Re-)Register timeout handlers.
 	_start_timer.sigh(_start_dispatcher);
 	_kill_timer.sigh(_kill_dispatcher);
@@ -187,6 +190,7 @@ void Task::run()
 void Task::stop()
 {
 	PINF("Stopping task %s\n", _name.c_str());
+	_paused = true;
 	_stop_timers();
 	_kill(19);
 }
@@ -278,6 +282,12 @@ std::string Task::_make_name() const
 
 void Task::_start(unsigned)
 {
+	if (_paused)
+	{
+		// This might happen if start timeout is triggered before a stop call but is handled after.
+		return;
+	}
+
 	if (running())
 	{
 		PINF("Trying to start %s but previous instance still running or undestroyed. Abort.\n", _name.c_str());
@@ -365,8 +375,12 @@ Task::Child_destructor_thread Task::_child_destructor;
 
 void Task::_kill_crit(unsigned)
 {
-	PINF("Critical time reached for %s", _name.c_str());
-	_kill(17);
+	// Check for paused status for the rare case where timer signals have been triggered before stopping but are handled after.
+	if (!_paused)
+	{
+		PINF("Critical time reached for %s", _name.c_str());
+		_kill(17);
+	}
 }
 
 void Task::_kill(int exit_value)

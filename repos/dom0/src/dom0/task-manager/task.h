@@ -188,6 +188,8 @@ protected:
 	Genode::Attached_ram_dataspace _config;
 	std::string _name;
 
+	bool _paused;
+
 	// Periodic timers.
 	Timer::Connection _start_timer;
 	Timer::Connection _kill_timer;
