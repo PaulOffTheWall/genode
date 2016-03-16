@@ -58,9 +58,17 @@ int main(int argc, char*argv[]) {
         for(int taskNo=1; taskNo<=num; taskNo++) {
             int et = rand() % 5000 + 1000;
             int ct = et;
-            int period = rand() % 20000 + 10000;
+            int period = rand() % 4000 + 3000;
             int offset = 0;
-            int prio = 1;
+            int prio = rand() % 3 + 1;
+
+            if (taskNo == 1)
+            {
+                period = 0;
+                prio = 0;
+                et = 0;
+                ct = 0;
+            }
 
             PeriodicLoadTask::GenodeConfig config;
             config.arg1 = rand() % 50000 + 100000;

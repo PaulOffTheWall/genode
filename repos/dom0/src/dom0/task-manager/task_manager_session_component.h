@@ -8,8 +8,8 @@
 #include <os/attached_ram_dataspace.h>
 #include <os/server.h>
 #include <root/component.h>
+#include <timer_session/connection.h>
 #include <util/string.h>
-#include <trace_session/connection.h>
 
 #include "task.h"
 
@@ -39,19 +39,12 @@ public:
 
 protected:
 	Server::Entrypoint& _ep;
-	std::unordered_map<std::string, Genode::Attached_ram_dataspace> _binaries;
-	Genode::Sliced_heap _heap;
+	Task::Shared_data _shared;
 	Genode::Cap_connection _cap;
-	Genode::Service_registry _parent_services;
 
-	// List instead of vector because reallocation would invalidate dataspaces.
-	std::list<Task> _tasks;
+	Timer::Connection _timer;
 
-	Genode::Trace::Connection _trace;
 	Genode::Attached_ram_dataspace _profile_data;
-
-	void _update_profile_data();
-	Task* _task_by_name(const std::string& name);
 
 	static Genode::Number_of_bytes _launchpad_quota();
 	static Genode::Number_of_bytes _trace_quota();

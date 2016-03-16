@@ -1,5 +1,6 @@
 #pragma once
 
+#include <list>
 #include <unordered_map>
 
 #include <base/service.h>
@@ -9,6 +10,7 @@
 #include <os/server.h>
 #include <os/signal_rpc_dispatcher.h>
 #include <timer_session/connection.h>
+#include <trace_session/connection.h>
 #include <util/noncopyable.h>
 #include <util/xml_node.h>
 
@@ -22,6 +24,7 @@ public:
 	public:
 		Child_policy(
 			const std::string& name,
+			Task& task,
 			Genode::Service_registry& parent_services,
 			Genode::Dataspace_capability config_ds,
 			Genode::Dataspace_capability binary_ds,
@@ -36,6 +39,7 @@ public:
 
 	protected:
 		char _name[32];
+		Task* _task;
 		Genode::Service_registry* _parent_services;
 		Genode::Rpc_entrypoint* _parent_entrypoint;
 		Init::Child_policy_enforce_labeling _labeling_policy;
@@ -44,7 +48,7 @@ public:
 		bool _active;
 	};
 
-	// Meta data that needs to be dynamically allocated on each start request.
+	// Part of Meta_ex that needs constructor initialization (transferring ram quota).
 	struct Meta
 	{
 	public:
@@ -56,11 +60,13 @@ public:
 		Genode::Pd_connection pd;
 	};
 
+	// Meta data that needs to be dynamically allocated on each start request.
 	struct Meta_ex : Meta
 	{
 	public:
 		Meta_ex(
 			const std::string& name,
+			Task& task,
 			size_t quota,
 			unsigned int priority,
 			Genode::Service_registry& parent_services,
@@ -72,29 +78,97 @@ public:
 		Genode::Child child;
 	};
 
-	Task(
-		Server::Entrypoint& ep,
-		std::unordered_map<std::string, Genode::Attached_ram_dataspace>& binaries,
-		Genode::Sliced_heap& heap,
-		Genode::Cap_session& cap,
-		Genode::Service_registry& parent_services,
-		const Genode::Xml_node& node);
+	// Single event of the profiling log data.
+	struct Event
+	{
+		struct Task_info
+		{
+			struct Managed_info
+			{
+				size_t quota;
+				size_t used;
+			};
+
+			unsigned id;
+			std::string session;
+			std::string thread;
+			Genode::Trace::Subject_info::State state;
+			unsigned long long execution_time;
+
+			// Managed by the task manager.
+			bool managed;
+			Managed_info managed_info;
+		};
+		enum Type { START = 0, EXIT, EXIT_CRITICAL, EXIT_ERROR, EXTERNAL };
+
+		// Event trigger type.
+		Type type;
+
+		// Task that triggered this event. "" for EXTERNAL.
+		std::string task_name;
+
+		// Time of trigger.
+		unsigned long time_stamp;
+
+		std::list<Task_info> task_infos;
+	};
+
+	// Shared objects. There is only one instance per task manager. Rest are all references.
+	struct Shared_data
+	{
+		Shared_data(size_t trace_quota, size_t trace_buf_size);
+
+		// All binaries loaded by the task manager.
+		std::unordered_map<std::string, Genode::Attached_ram_dataspace> binaries;
+
+		// Heap on which to create the init child.
+		Genode::Sliced_heap heap;
+
+		// Core services provided by the parent.
+		Genode::Service_registry parent_services;
+
+		// Trace connection used for execution time of tasks.
+		Genode::Trace::Connection trace;
+
+		// Log of task events, duh.
+		std::list<Task::Event> event_log;
+
+		// Timer used for time stamps in event log.
+		Timer::Connection timer;
+
+		// List instead of vector because reallocation would invalidate dataspaces.
+		std::list<Task> tasks;
+	};
+
+	Task(Server::Entrypoint& ep, Genode::Cap_connection& cap, Shared_data& shared, const Genode::Xml_node& node);
 	virtual ~Task();
 
 	void run();
 	void stop();
 	std::string name() const;
-	Meta_ex* const meta();
+	bool running() const;
+
+	static Task* task_by_name(std::list<Task>& tasks, const std::string& name);
+	static void log_profile_data(Event::Type type, const std::string& task_name, unsigned long time_stamp, Shared_data& shared);
 
 protected:
-	// All binaries loaded by the task manager.
-	std::unordered_map<std::string, Genode::Attached_ram_dataspace>& _binaries;
+	class Child_destructor_thread : Genode::Thread<2*4096>
+	{
+	public:
+		Child_destructor_thread();
+		void submit_for_destruction(Task* task);
 
-	// Heap on which to create the init child.
-	Genode::Sliced_heap& _heap;
+	private:
+		Genode::Lock _lock;
+		std::list<Task*> _queued;
+		Timer::Connection _timer;
 
-	// Core services provided by the parent.
-	Genode::Service_registry& _parent_services;
+		void entry() override;
+	};
+
+	static Child_destructor_thread _child_destructor;
+
+	Shared_data& _shared;
 
 	// XML task description.
 	unsigned int _id;
@@ -132,6 +206,9 @@ protected:
 	void _kill_crit(unsigned);
 	void _kill();
 	void _idle(unsigned);
+	void _stop_timers();
+	void _stop_kill_timer();
+	void _stop_start_timer();
 
 	// Check if the provided ELF is dynamic by reading the header.
 	static bool _check_dynamic_elf(Genode::Attached_ram_dataspace& ds);

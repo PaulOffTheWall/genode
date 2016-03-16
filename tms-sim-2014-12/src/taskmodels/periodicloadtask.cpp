@@ -144,10 +144,14 @@ namespace tmssim {
   int PeriodicLoadTask::writeData(xmlTextWriterPtr writer) {
     string tasks[] = {"hey", "namaste", "tumatmul"};
     string pkg = tasks[ rand() % 3 ]; // size of tasks array
-    string quota = "2M";
+    string quota = "512K";
     if (pkg == "tumatmul")
     {
       quota = "8M";
+    }
+    if (_period == 0 && getPriority() == 0)
+    {
+      pkg = "idle";
     }
 
     Task::writeData(writer);
