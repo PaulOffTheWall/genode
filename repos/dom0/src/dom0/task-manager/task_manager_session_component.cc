@@ -90,6 +90,8 @@ void Task_manager_session_component::stop()
 
 Genode::Ram_dataspace_capability Task_manager_session_component::profile_data()
 {
+	Task::log_profile_data(Task::Event::EXTERNAL, "", _shared);
+
 	Genode::Lock::Guard guard(_shared.log_lock);
 	// Xml_generator directly writes XML data into the buffer on construction, explaining the heavy recursion here.
 	PDBG("Generating event log. %d events have occurred.", _shared.event_log.size());
