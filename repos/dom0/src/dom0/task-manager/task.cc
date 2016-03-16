@@ -215,7 +215,7 @@ Task* Task::task_by_name(std::list<Task>& tasks, const std::string& name)
 
 void Task::log_profile_data(Event::Type type, const std::string& task_name, Shared_data& shared)
 {
-	static const size_t MAX_NUM_SUBJECTS = 32;
+	static const size_t MAX_NUM_SUBJECTS = 128;
 	// Lock to avoid race conditions as this may be called by the child's thread.
 	Genode::Lock::Guard guard(shared.log_lock);
 
