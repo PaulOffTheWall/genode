@@ -9,7 +9,7 @@ TOOLCHAIN_BUILD_DIR ?= $(BUILD_DIR)/toolchain-$(TOOLCHAIN_TARGET)
 GENODE_BUILD_DIR    ?= $(BUILD_DIR)/genode-$(GENODE_TARGET)
 BUILD_CONF           = $(GENODE_BUILD_DIR)/etc/build.conf
 
-all: tms descs toolchain ports platform
+all: tms descs toolchain ports platform vde
 
 
 # ================================================================
