@@ -95,40 +95,61 @@ Genode::Ram_dataspace_capability Task_manager_session_component::profile_data()
 	Genode::Lock::Guard guard(_shared.log_lock);
 	// Xml_generator directly writes XML data into the buffer on construction, explaining the heavy recursion here.
 	PDBG("Generating event log. %d events have occurred.", _shared.event_log.size());
-	Genode::Xml_generator xml(_profile_data.local_addr<char>(), _profile_data.size(), "event-log", [&]()
+	Genode::Xml_generator xml(_profile_data.local_addr<char>(), _profile_data.size(), "profile", [&]()
 	{
-		for (const Task::Event& event : _shared.event_log)
+		xml.node("task-descriptions", [&]()
 		{
-			xml.node("event", [&]()
+			for (const Task& task : _shared.tasks)
 			{
-				xml.attribute("type", Task::Event::type_name(event.type));
-				xml.attribute("task", event.task_name.c_str());
-				xml.attribute("time-stamp", std::to_string(event.time_stamp).c_str());
-
-				for (const Task::Event::Task_info& task_info : event.task_infos)
+				xml.node("task", [&]()
 				{
-					xml.node("task", [&]()
-					{
-						xml.attribute("id", std::to_string(task_info.id).c_str());
-						xml.attribute("session", task_info.session.c_str());
-						xml.attribute("thread", task_info.thread.c_str());
-						xml.attribute("state", Genode::Trace::Subject_info::state_name(task_info.state));
-						xml.attribute("managed", task_info.managed ? "yes" : "no");
-						xml.attribute("execution-time", std::to_string(task_info.execution_time).c_str());
+					xml.attribute("id", std::to_string(task.desc().id).c_str());
+					xml.attribute("execution-time", std::to_string(task.desc().execution_time).c_str());
+					xml.attribute("critical-time", std::to_string(task.desc().critical_time).c_str());
+					xml.attribute("priority", std::to_string(task.desc().priority).c_str());
+					xml.attribute("period", std::to_string(task.desc().period).c_str());
+					xml.attribute("offset", std::to_string(task.desc().offset).c_str());
+					xml.attribute("quota", std::to_string((size_t)task.desc().quota).c_str());
+					xml.attribute("binary", task.desc().binary_name.c_str());
+				});
+			}
+		});
 
-						if (task_info.managed)
+		xml.node("events", [&]()
+		{
+			for (const Task::Event& event : _shared.event_log)
+			{
+				xml.node("event", [&]()
+				{
+					xml.attribute("type", Task::Event::type_name(event.type));
+					xml.attribute("task", event.task_name.c_str());
+					xml.attribute("time-stamp", std::to_string(event.time_stamp).c_str());
+
+					for (const Task::Event::Task_info& task_info : event.task_infos)
+					{
+						xml.node("task", [&]()
 						{
-							xml.node("managed-task", [&]()
+							xml.attribute("id", std::to_string(task_info.id).c_str());
+							xml.attribute("session", task_info.session.c_str());
+							xml.attribute("thread", task_info.thread.c_str());
+							xml.attribute("state", Genode::Trace::Subject_info::state_name(task_info.state));
+							xml.attribute("managed", task_info.managed ? "yes" : "no");
+							xml.attribute("execution-time", std::to_string(task_info.execution_time).c_str());
+
+							if (task_info.managed)
 							{
-								xml.attribute("quota", std::to_string(task_info.managed_info.quota).c_str());
-								xml.attribute("used", std::to_string(task_info.managed_info.used).c_str());
-								xml.attribute("iteration", std::to_string(task_info.managed_info.iteration).c_str());
-							});
-						}
-					});
-				}
-			});
-		}
+								xml.node("managed-task", [&]()
+								{
+									xml.attribute("quota", std::to_string(task_info.managed_info.quota).c_str());
+									xml.attribute("used", std::to_string(task_info.managed_info.used).c_str());
+									xml.attribute("iteration", std::to_string(task_info.managed_info.iteration).c_str());
+								});
+							}
+						});
+					}
+				});
+			}
+		});
 	});
 
 	_shared.event_log.clear();

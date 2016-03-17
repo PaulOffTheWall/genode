@@ -10,7 +10,7 @@ Task::Child_policy::Child_policy(Task& task) :
 		_task{&task},
 		_labeling_policy{task.name().c_str()},
 		_config_policy{"config", task._config.cap(), &task._child_ep},
-		_binary_policy{"binary", task._shared.binaries.at(task._binary_name).cap(), &task._child_ep},
+		_binary_policy{"binary", task._shared.binaries.at(task._desc.binary_name).cap(), &task._child_ep},
 		_active{true}
 {
 }
@@ -123,13 +123,13 @@ void Task::Child_policy::unregister_services()
 Task::Meta::Meta(const Task& task) :
 	ram{},
 	// Scale priority.
-	cpu{task.name().c_str(), (long int)task._priority * Genode::config()->xml_node().attribute_value<long int>("prio_levels", 0)},
+	cpu{task.name().c_str(), (long int)task._desc.priority * Genode::config()->xml_node().attribute_value<long int>("prio_levels", 0)},
 	rm{},
 	pd{},
 	server{ram}
 {
 	ram.ref_account(Genode::env()->ram_session_cap());
-	if (Genode::env()->ram_session()->transfer_quota(ram.cap(), task._quota) != 0)
+	if (Genode::env()->ram_session()->transfer_quota(ram.cap(), task._desc.quota) != 0)
 	{
 		PWRN("Failed to transfer RAM quota to child %s", task.name().c_str());
 	}
@@ -140,7 +140,7 @@ Task::Meta::Meta(const Task& task) :
 Task::Meta_ex::Meta_ex(Task& task) :
 		Meta{task},
 		policy{task},
-		child{task._shared.binaries.at(task._binary_name).cap(), pd.cap(), ram.cap(), cpu.cap(), rm.cap(), &task._child_ep, &policy}
+		child{task._shared.binaries.at(task._desc.binary_name).cap(), pd.cap(), ram.cap(), cpu.cap(), rm.cap(), &task._child_ep, &policy}
 {
 }
 
@@ -174,14 +174,15 @@ Task::Shared_data::Shared_data(size_t trace_quota, size_t trace_buf_size) :
 
 Task::Task(Server::Entrypoint& ep, Genode::Cap_connection& cap, Shared_data& shared, const Genode::Xml_node& node) :
 		_shared(shared),
-		_id           {_get_node_value<unsigned int>(node, "id")},
-		_execution_time{_get_node_value<unsigned int>(node, "executiontime")},
-		_critical_time {_get_node_value<unsigned int>(node, "criticaltime")},
-		_priority     {_get_node_value<unsigned int>(node, "priority")},
-		_period       {_get_node_value<unsigned int>(node, "period")},
-		_offset       {_get_node_value<unsigned int>(node, "offset")},
-		_quota        {_get_node_value<Genode::Number_of_bytes>(node, "quota")},
-		_binary_name   {_get_node_value(node, "pkg", 32, "")},
+		_desc{
+			_get_node_value<unsigned int>(node, "id"),
+			_get_node_value<unsigned int>(node, "executiontime"),
+			_get_node_value<unsigned int>(node, "criticaltime"),
+			_get_node_value<unsigned int>(node, "priority"),
+			_get_node_value<unsigned int>(node, "period"),
+			_get_node_value<unsigned int>(node, "offset"),
+			_get_node_value<Genode::Number_of_bytes>(node, "quota"),
+			_get_node_value(node, "pkg", 32, "")},
 		_config{Genode::env()->ram_session(), node.sub_node("config").size()},
 		_name{_make_name()},
 		_iteration{0},
@@ -211,9 +212,9 @@ void Task::run()
 	_start_timer.sigh(_start_dispatcher);
 	_kill_timer.sigh(_kill_dispatcher);
 
-	if (_period > 0)
+	if (_desc.period > 0)
 	{
-		_start_timer.trigger_periodic(_period * 1000);
+		_start_timer.trigger_periodic(_desc.period * 1000);
 	}
 	else
 	{
@@ -237,6 +238,11 @@ std::string Task::name() const
 bool Task::running() const
 {
 	return _meta != nullptr;
+}
+
+const Task::Description& Task::desc() const
+{
+	return _desc;
 }
 
 Task* Task::task_by_name(std::list<Task>& tasks, const std::string& name)
@@ -324,8 +330,8 @@ void Task::log_profile_data(Event::Type type, const std::string& task_name, Shar
 std::string Task::_make_name() const
 {
 	char id[4];
-	snprintf(id, sizeof(id), "%.2d.", _id);
-	return std::string(id) + _binary_name;
+	snprintf(id, sizeof(id), "%.2d.", _desc.id);
+	return std::string(id) + _desc.binary_name;
 }
 
 void Task::_start(unsigned)
@@ -343,32 +349,32 @@ void Task::_start(unsigned)
 	}
 
 	// Check if binary has already been received.
-	auto bin_it = _shared.binaries.find(_binary_name);
+	auto bin_it = _shared.binaries.find(_desc.binary_name);
 	if (bin_it == _shared.binaries.end())
 	{
-		PERR("Binary %s for task %s not found, possibly not yet received by dom0.", _binary_name.c_str(), _name.c_str());
+		PERR("Binary %s for task %s not found, possibly not yet received by dom0.", _desc.binary_name.c_str(), _name.c_str());
 		return;
 	}
 
 	Genode::Attached_ram_dataspace& ds = bin_it->second;
 
 	++_iteration;
-	PINF("Starting %s linked task %s with quota %u and priority %u in iteration %d", _check_dynamic_elf(ds) ? "dynamically" : "statically", _name.c_str(), (size_t)_quota, _priority, _iteration);
+	PINF("Starting %s linked task %s with quota %u and priority %u in iteration %d", _check_dynamic_elf(ds) ? "dynamically" : "statically", _name.c_str(), (size_t)_desc.quota, _desc.priority, _iteration);
 
-	if ((size_t)_quota < 512 * 1024)
+	if ((size_t)_desc.quota < 512 * 1024)
 	{
 		PWRN("Warning: RAM quota for %s might be too low to hold meta data.", _name.c_str());
 	}
 
 	// Dispatch kill timer after critical time.
-	if (_critical_time > 0)
+	if (_desc.critical_time > 0)
 	{
-		_kill_timer.trigger_once(_critical_time * 1000);
+		_kill_timer.trigger_once(_desc.critical_time * 1000);
 	}
 
 	// Abort if RAM quota insufficient. Alternatively, we could give all remaining quota to the child.
-	if (_quota > Genode::env()->ram_session()->avail()) {
-		PERR("Not enough RAM quota for task %s, requested: %u, available: %u", _name.c_str(), (size_t)_quota, Genode::env()->ram_session()->avail());
+	if (_desc.quota > Genode::env()->ram_session()->avail()) {
+		PERR("Not enough RAM quota for task %s, requested: %u, available: %u", _name.c_str(), (size_t)_desc.quota, Genode::env()->ram_session()->avail());
 		return;
 	}
 
@@ -458,7 +464,6 @@ void Task::_stop_timers()
 
 void Task::_stop_kill_timer()
 {
-	// "Stop" timers. Apparently there is no way to stop a running timer, so instead we let it trigger an idle method.
 	_kill_timer.sigh(_idle_dispatcher);
 	_kill_timer.trigger_once(0);
 }

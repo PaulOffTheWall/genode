@@ -107,6 +107,18 @@ public:
 		std::list<Task_info> task_infos;
 	};
 
+	struct Description
+	{
+		unsigned int id;
+		unsigned int execution_time;
+		unsigned int critical_time;
+		unsigned int priority;
+		unsigned int period;
+		unsigned int offset;
+		Genode::Number_of_bytes quota;
+		std::string binary_name;
+	};
+
 	// Shared objects. There is only one instance per task manager. Rest are all references.
 	struct Shared_data
 	{
@@ -147,6 +159,7 @@ public:
 	void stop();
 	std::string name() const;
 	bool running() const;
+	const Description& desc() const;
 
 	static Task* task_by_name(std::list<Task>& tasks, const std::string& name);
 	static void log_profile_data(Event::Type type, const std::string& task_name, Shared_data& shared);
@@ -169,16 +182,7 @@ protected:
 	static Child_destructor_thread _child_destructor;
 
 	Shared_data& _shared;
-
-	// XML task description.
-	unsigned int _id;
-	unsigned int _execution_time;
-	unsigned int _critical_time;
-	unsigned int _priority;
-	unsigned int _period;
-	unsigned int _offset;
-	Genode::Number_of_bytes _quota;
-	std::string _binary_name;
+	Description _desc;
 
 	Genode::Attached_ram_dataspace _config;
 	const std::string _name;
