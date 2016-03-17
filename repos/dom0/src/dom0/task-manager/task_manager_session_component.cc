@@ -118,10 +118,11 @@ Genode::Ram_dataspace_capability Task_manager_session_component::profile_data()
 
 						if (task_info.managed)
 						{
-							xml.node("ram", [&]()
+							xml.node("managed-task", [&]()
 							{
 								xml.attribute("quota", std::to_string(task_info.managed_info.quota).c_str());
 								xml.attribute("used", std::to_string(task_info.managed_info.used).c_str());
+								xml.attribute("iteration", std::to_string(task_info.managed_info.iteration).c_str());
 							});
 						}
 					});

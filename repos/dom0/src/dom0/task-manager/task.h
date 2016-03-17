@@ -78,6 +78,7 @@ public:
 			{
 				size_t quota;
 				size_t used;
+				int iteration;
 			};
 
 			unsigned id;
@@ -181,6 +182,7 @@ protected:
 
 	Genode::Attached_ram_dataspace _config;
 	const std::string _name;
+	int _iteration;
 
 	bool _paused;
 

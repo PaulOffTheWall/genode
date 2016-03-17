@@ -39,6 +39,7 @@ void Task::Child_policy::exit(int exit_value)
 	}
 
 	Task::log_profile_data(type, _task->_name, _task->_shared);
+
 	Task::_child_destructor.submit_for_destruction(_task);
 }
 
@@ -183,6 +184,7 @@ Task::Task(Server::Entrypoint& ep, Genode::Cap_connection& cap, Shared_data& sha
 		_binary_name   {_get_node_value(node, "pkg", 32, "")},
 		_config{Genode::env()->ram_session(), node.sub_node("config").size()},
 		_name{_make_name()},
+		_iteration{0},
 		_paused{true},
 		_start_timer{},
 		_kill_timer{},
@@ -266,6 +268,8 @@ void Task::log_profile_data(Event::Type type, const std::string& task_name, Shar
 	event.task_name = task_name;
 	event.time_stamp = shared.timer.elapsed_ms();
 
+	Event::Task_info* task_manager_info = nullptr;
+
 	for (Genode::Trace::Subject_id* subject = subjects; subject < subjects + num_subjects; ++subject)
 	{
 		info = shared.trace.subject_info(*subject);
@@ -294,6 +298,7 @@ void Task::log_profile_data(Event::Type type, const std::string& task_name, Shar
 			task_info.managed = true;
 			task_info.managed_info.quota = task->_meta->ram.quota();
 			task_info.managed_info.used = task->_meta->ram.used();
+			task_info.managed_info.iteration = task->_iteration;
 		}
 		// Check if this is task-manager itself.
 		else if (task_info.session.rfind("task-manager") == task_info.session.length() - 12 && task_info.thread == "task-manager")
@@ -301,6 +306,17 @@ void Task::log_profile_data(Event::Type type, const std::string& task_name, Shar
 			task_info.managed = true;
 			task_info.managed_info.quota = Genode::env()->ram_session()->quota();
 			task_info.managed_info.used = Genode::env()->ram_session()->used();
+			task_info.managed_info.iteration = 0;
+
+			// Hack: there are two task-manager processes. We only flag the more active one as managed.
+			if (!task_manager_info)
+			{
+				task_manager_info = &task_info;
+			}
+			else if (task_manager_info->execution_time < task_info.execution_time)
+			{
+				task_manager_info->managed = false;
+			}
 		}
 	}
 }
@@ -336,7 +352,8 @@ void Task::_start(unsigned)
 
 	Genode::Attached_ram_dataspace& ds = bin_it->second;
 
-	PINF("Starting %s linked task %s with quota %u and priority %u", _check_dynamic_elf(ds) ? "dynamically" : "statically", _name.c_str(), (size_t)_quota, _priority);
+	++_iteration;
+	PINF("Starting %s linked task %s with quota %u and priority %u in iteration %d", _check_dynamic_elf(ds) ? "dynamically" : "statically", _name.c_str(), (size_t)_quota, _priority, _iteration);
 
 	if ((size_t)_quota < 512 * 1024)
 	{
