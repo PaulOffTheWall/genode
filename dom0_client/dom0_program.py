@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from dom0client import *
+from dom0_client import *
 import time
 
 session = Dom0_session('192.168.0.14', 3001, 'tasks.xml')

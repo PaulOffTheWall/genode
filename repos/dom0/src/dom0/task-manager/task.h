@@ -22,26 +22,24 @@ public:
 	struct Child_policy : Genode::Child_policy
 	{
 	public:
-		Child_policy(
-			const std::string& name,
-			Task& task,
-			Genode::Service_registry& parent_services,
-			Genode::Dataspace_capability config_ds,
-			Genode::Dataspace_capability binary_ds,
-			Genode::Rpc_entrypoint& parent_entrypoint);
+		Child_policy(Task& task);
 
+		// All methods below will be called from the child thread most of the time, and not the task-manager thread. Watch out for race conditions.
 		virtual void exit(int exit_value) override;
 		virtual const char *name() const override;
-		Genode::Service *resolve_session_request(const char *service_name, const char *args);
-		void filter_session_args(const char *service, char *args, Genode::size_t args_len);
+		Genode::Service *resolve_session_request(const char *service_name, const char *args) override;
+		void filter_session_args(const char *service, char *args, Genode::size_t args_len) override;
+		bool announce_service(
+			const char *service_name,
+			Genode::Root_capability root,
+			Genode::Allocator *alloc,
+			Genode::Server*) override;
+		void unregister_services() override;
 
 		virtual bool active() const;
 
 	protected:
-		char _name[32];
 		Task* _task;
-		Genode::Service_registry* _parent_services;
-		Genode::Rpc_entrypoint* _parent_entrypoint;
 		Init::Child_policy_enforce_labeling _labeling_policy;
 		Init::Child_policy_provide_rom_file _config_policy;
 		Init::Child_policy_provide_rom_file _binary_policy;
@@ -52,27 +50,20 @@ public:
 	struct Meta
 	{
 	public:
-		Meta(const std::string& name, size_t quota, unsigned int priority);
+		Meta(const Task& task);
 
 		Genode::Ram_connection ram;
 		Genode::Cpu_connection cpu;
 		Genode::Rm_connection rm;
 		Genode::Pd_connection pd;
+		Genode::Server server;
 	};
 
 	// Meta data that needs to be dynamically allocated on each start request.
 	struct Meta_ex : Meta
 	{
 	public:
-		Meta_ex(
-			const std::string& name,
-			Task& task,
-			size_t quota,
-			unsigned int priority,
-			Genode::Service_registry& parent_services,
-			Genode::Dataspace_capability config_ds,
-			Genode::Dataspace_capability binary_ds,
-			Genode::Rpc_entrypoint& parent_entrypoint);
+		Meta_ex(Task& task);
 
 		Child_policy policy;
 		Genode::Child child;
@@ -128,6 +119,9 @@ public:
 
 		// Core services provided by the parent.
 		Genode::Service_registry parent_services;
+
+		// Services provided by the started children, if any.
+		Genode::Service_registry child_services;
 
 		// Trace connection used for execution time of tasks.
 		Genode::Trace::Connection trace;
@@ -186,7 +180,7 @@ protected:
 	std::string _binary_name;
 
 	Genode::Attached_ram_dataspace _config;
-	std::string _name;
+	const std::string _name;
 
 	bool _paused;
 

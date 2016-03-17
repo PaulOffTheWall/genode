@@ -6,29 +6,25 @@
 #include <base/elf.h>
 #include <base/lock.h>
 
-Task::Child_policy::Child_policy(
-	const std::string& name,
-	Task& task,
-	Genode::Service_registry& parent_services,
-	Genode::Dataspace_capability config_ds,
-	Genode::Dataspace_capability binary_ds,
-	Genode::Rpc_entrypoint& parent_entrypoint) :
+Task::Child_policy::Child_policy(Task& task) :
 		_task{&task},
-		_parent_services{&parent_services},
-		_parent_entrypoint{&parent_entrypoint},
-		_labeling_policy{name.c_str()},
-		_config_policy{"config", config_ds, _parent_entrypoint},
-		_binary_policy{"binary", binary_ds, _parent_entrypoint},
+		_labeling_policy{task.name().c_str()},
+		_config_policy{"config", task._config.cap(), &task._child_ep},
+		_binary_policy{"binary", task._shared.binaries.at(task._binary_name).cap(), &task._child_ep},
 		_active{true}
 {
-	std::strncpy(_name, name.c_str(), 32);
 }
 
 void Task::Child_policy::exit(int exit_value)
 {
+	// Already exited, waiting for destruction.
+	if (!_active)
+	{
+		return;
+	}
+	_active = false;
 	PDBG("child %s exited with exit value %d", name(), exit_value);
 
-	_task->_stop_kill_timer();
 	Task::Event::Type type;
 	switch (exit_value)
 	{
@@ -44,12 +40,11 @@ void Task::Child_policy::exit(int exit_value)
 
 	Task::log_profile_data(type, _task->_name, _task->_shared);
 	Task::_child_destructor.submit_for_destruction(_task);
-	_active = false;
 }
 
 const char* Task::Child_policy::name() const
 {
-	return _name;
+	return _task->name().c_str();
 }
 
 bool Task::Child_policy::active() const
@@ -61,26 +56,34 @@ Genode::Service* Task::Child_policy::resolve_session_request(const char* service
 {
 	Genode::Service* service = nullptr;
 
-	// check for config file request
+	// Check for config file request.
 	if ((service = _config_policy.resolve_session_request(service_name, args)))
 	{
 		return service;
 	}
 
-	// check for binary file request
+	// Check for binary file request.
 	if ((service = _binary_policy.resolve_session_request(service_name, args)))
 	{
 		return service;
 	}
 
-	// check parent services
-	if ((service = _parent_services->find(service_name)))
+	// Check child services.
+	if ((service = _task->_shared.child_services.find(service_name)))
 	{
 		return service;
 	}
 
-	PERR("Service %s requested by %s not found.", service_name, _name);
-	return nullptr;
+	// Check parent services.
+	if ((service = _task->_shared.parent_services.find(service_name)))
+	{
+		return service;
+	}
+
+	PINF("Service %s requested by %s not found. Waiting for it to become available.", service_name, name());
+
+	Genode::Client client;
+	return _task->_shared.child_services.wait_for_service(service_name, &client, name());
 }
 
 void Task::Child_policy::filter_session_args(const char *service, char *args, Genode::size_t args_len)
@@ -88,34 +91,59 @@ void Task::Child_policy::filter_session_args(const char *service, char *args, Ge
 	_labeling_policy.filter_session_args(service, args, args_len);
 }
 
-Task::Meta::Meta(const std::string& name, size_t quota, unsigned int priority) :
-	ram{},
-	// Scale priority.
-	cpu{name.c_str(), (long int)priority * Genode::config()->xml_node().attribute_value<long int>("prio_levels", 0)},
-	rm{},
-	pd{}
+bool Task::Child_policy::announce_service(
+	const char *service_name,
+	Genode::Root_capability root,
+	Genode::Allocator *alloc,
+	Genode::Server*)
 {
-	ram.ref_account(Genode::env()->ram_session_cap());
-	if (Genode::env()->ram_session()->transfer_quota(ram.cap(), quota) != 0)
+	if (_task->_shared.child_services.find(service_name)) {
+		PWRN("%s: service %s is already registered", name(), service_name);
+		return false;
+	}
+
+	_task->_shared.child_services.insert(new (alloc) Genode::Child_service(service_name, root, &_task->_meta->server));
+	PINF("%s registered service %s\n", name(), service_name);
+
+	return true;
+}
+
+void Task::Child_policy::unregister_services()
+{
+	Genode::Service *rs;
+	while ((rs = _task->_shared.child_services.find_by_server(&_task->_meta->server)))
 	{
-		PWRN("Failed to transfer RAM quota to child %s", name.c_str());
+		_task->_shared.child_services.remove(rs);
 	}
 }
 
-Task::Meta_ex::Meta_ex(
-	const std::string& name,
-	Task& task,
-	size_t quota,
-	unsigned int priority,
-	Genode::Service_registry& parent_services,
-	Genode::Dataspace_capability config_ds,
-	Genode::Dataspace_capability binary_ds,
-	Genode::Rpc_entrypoint& parent_entrypoint) :
-		Meta{name, quota, priority},
-		policy{name, task, parent_services, config_ds, binary_ds, parent_entrypoint},
-		child{binary_ds, pd.cap(), ram.cap(), cpu.cap(), rm.cap(), &parent_entrypoint, &policy}
+
+
+Task::Meta::Meta(const Task& task) :
+	ram{},
+	// Scale priority.
+	cpu{task.name().c_str(), (long int)task._priority * Genode::config()->xml_node().attribute_value<long int>("prio_levels", 0)},
+	rm{},
+	pd{},
+	server{ram}
+{
+	ram.ref_account(Genode::env()->ram_session_cap());
+	if (Genode::env()->ram_session()->transfer_quota(ram.cap(), task._quota) != 0)
+	{
+		PWRN("Failed to transfer RAM quota to child %s", task.name().c_str());
+	}
+}
+
+
+
+Task::Meta_ex::Meta_ex(Task& task) :
+		Meta{task},
+		policy{task},
+		child{task._shared.binaries.at(task._binary_name).cap(), pd.cap(), ram.cap(), cpu.cap(), rm.cap(), &task._child_ep, &policy}
 {
 }
+
+
 
 const char* Task::Event::type_name(Type type)
 {
@@ -131,6 +159,8 @@ const char* Task::Event::type_name(Type type)
 	}
 }
 
+
+
 Task::Shared_data::Shared_data(size_t trace_quota, size_t trace_buf_size) :
 	binaries{},
 	heap{Genode::env()->ram_session(), Genode::env()->rm_session()},
@@ -138,6 +168,8 @@ Task::Shared_data::Shared_data(size_t trace_quota, size_t trace_buf_size) :
 	trace{trace_quota, trace_buf_size, 0}
 {
 }
+
+
 
 Task::Task(Server::Entrypoint& ep, Genode::Cap_connection& cap, Shared_data& shared, const Genode::Xml_node& node) :
 		_shared(shared),
@@ -325,7 +357,8 @@ void Task::_start(unsigned)
 
 	try
 	{
-		_meta = new (&_shared.heap) Meta_ex(_name, *this, _quota, _priority, _shared.parent_services, _config.cap(), ds.cap(), _child_ep);
+		// Create child and activate entrypoint.
+		_meta = new (&_shared.heap) Meta_ex(*this);
 		_child_ep.activate();
 	}
 	catch (Genode::Cpu_session::Thread_creation_failed)
@@ -389,6 +422,7 @@ void Task::_kill(int exit_value)
 	if (_meta && _meta->policy.active())
 	{
 		PINF("Force-exiting %s", _name.c_str());
+		// Child::exit() is usually called from the child thread. Use this carefully.
 		_meta->child.exit(exit_value);
 	}
 }

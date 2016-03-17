@@ -41,8 +41,8 @@ __pycache__
 /repos/qt4/tool/rcc
 /repos/qt4/tool/uic
 /tms-sim-2014-12/build
-/dom0-client/tasks.xml
-/dom0-client/hey
-/dom0-client/namaste
-/dom0-client/tumatmul
-/dom0-client/log.xml
+/dom0_client/tasks.xml
+/dom0_client/hey
+/dom0_client/namaste
+/dom0_client/tumatmul
+/dom0_client/log.xml

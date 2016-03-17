@@ -107,18 +107,18 @@ class Dom0_session:
 
 def help():
 	print('''
-	Available commands:
-		session.send_descs()			: Send task descriptions to server.
-		session.send_bins()			: Send binaries to server.
-		session.start()				: Start tasks on server.
-		session.start_ex()			: Do all of the above in order.
-		session.stop()				: Stop all running tasks on server.
-		session.clear()				: Stop and clear all tasks on the server. Binaries will be kept.
-		session.profile([log_file])		: Request profiling data from server and store in log_file (default log.xml).
+Available commands:
+	session.send_descs()			: Send task descriptions to server.
+	session.send_bins()			: Send binaries to server.
+	session.start()				: Start tasks on server.
+	session.start_ex()			: Do all of the above in order.
+	session.stop()				: Stop all running tasks on server.
+	session.clear()				: Stop and clear all tasks on the server. Binaries will be kept.
+	session.profile([log_file])		: Request profiling data from server and store in log_file (default log.xml).
 
-		session.read_tasks([tasks_file])	: Load tasks file (default tasks.xml).
-		session.connect([host, port])		: Connect to dom0 server (default 192.168.0.14:3001).
-		session.close()				: Close connection.
+	session.read_tasks([tasks_file])	: Load tasks file (default tasks.xml).
+	session.connect([host, port])		: Connect to dom0 server (default 192.168.0.14:3001).
+	session.close()				: Close connection.
 
-		help()					: Print this message.
-	''')
+	help()					: Print this message.
+''')
