@@ -43,6 +43,7 @@ __pycache__
 /tms-sim-2014-12/build
 /dom0_client/tasks.xml
 /dom0_client/hey
+/dom0_client/idle
 /dom0_client/namaste
 /dom0_client/tumatmul
 /dom0_client/log.xml
