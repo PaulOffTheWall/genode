@@ -9,7 +9,7 @@ script_dir = os.path.dirname(os.path.realpath(__file__)) + '/'
 
 class Dom0_session:
 	"""Manager for a connection to the dom0 server."""
-	def __init__(self, host='192.168.0.14', port=3001, tasks_file='tasks.xml'):
+	def __init__(self, host='192.168.0.14', port=3001, tasks_file=script_dir+'tasks.xml'):
 		"""Initialize connection and parse task descriptions."""
 		self.connect(host, port)
 		self.read_tasks(tasks_file)
@@ -19,10 +19,10 @@ class Dom0_session:
 		self.conn = socket.create_connection((host, port))
 		print('Connected.')
 
-	def read_tasks(self, tasks_file='tasks.xml'):
+	def read_tasks(self, tasks_file=script_dir+'tasks.xml'):
 		"""Read XML file and enumerate binaries."""
 		# Read XML file and discard meta data.
-		self.tasks = open(script_dir + tasks_file, 'rb').read()
+		self.tasks = open(tasks_file, 'rb').read()
 		tasks_ascii = self.tasks.decode('ascii')
 
 		# Enumerate binaries.
@@ -84,7 +84,7 @@ class Dom0_session:
 		meta = struct.pack('I', magicnumbers.CLEAR)
 		self.conn.send(meta)
 
-	def profile(self, log_file='log.xml'):
+	def profile(self, log_file=script_dir+'log.xml'):
 		"""Get profiling information about all running tasks."""
 		print('Requesting profile data.')
 		meta = struct.pack('I', magicnumbers.GET_PROFILE)
@@ -94,7 +94,7 @@ class Dom0_session:
 		xml = b''
 		while len(xml) < size:
 			xml += self.conn.recv(size)
-		file = open(script_dir + log_file, 'w')
+		file = open(log_file, 'w')
 		file.write(xml.decode('utf-8')[:-1])
 		print('Profiling data of size {} saved to {}'.format(size, log_file))
 

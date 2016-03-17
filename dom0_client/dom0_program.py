@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 from dom0_client import *
+from dom0_sql import *
 import time
 
-session = Dom0_session('192.168.0.14', 3001, 'tasks.xml')
+session = Dom0_session('192.168.0.14', 3001, script_dir + 'tasks.xml')
 session.start_ex()
 
 time.sleep(10)
@@ -12,7 +13,8 @@ session.stop()
 
 time.sleep(1)
 
-session.profile('log.xml')
+session.profile(script_dir + 'log.xml')
+xml2sql(script_dir + 'log.xml', script_dir + 'dom0.db')
 
 help()
 code.interact(local=locals())
