@@ -95,7 +95,7 @@ class Dom0_session:
 		while len(xml) < size:
 			xml += self.conn.recv(size)
 		file = open(script_dir + log_file, 'w')
-		file.write(xml.decode('utf-8'))
+		file.write(xml.decode('utf-8')[:-1])
 		print('Profiling data of size {} saved to {}'.format(size, log_file))
 
 	def close(self):

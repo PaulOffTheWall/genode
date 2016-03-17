@@ -76,12 +76,16 @@ public:
 		{
 			struct Managed_info
 			{
+				// Task manager id.
+				int id;
 				size_t quota;
 				size_t used;
 				int iteration;
 			};
 
+			// Trace subject id. Pretty much useless.
 			unsigned id;
+
 			std::string session;
 			std::string thread;
 			Genode::Trace::Subject_info::State state;
@@ -98,8 +102,8 @@ public:
 		// Event trigger type.
 		Type type;
 
-		// Task that triggered this event. "" for EXTERNAL.
-		std::string task_name;
+		// Task that triggered this event. -1 for EXTERNAL. 0 for task-manager.
+		int task_id;
 
 		// Time of trigger.
 		unsigned long time_stamp;
@@ -162,7 +166,7 @@ public:
 	const Description& desc() const;
 
 	static Task* task_by_name(std::list<Task>& tasks, const std::string& name);
-	static void log_profile_data(Event::Type type, const std::string& task_name, Shared_data& shared);
+	static void log_profile_data(Event::Type type, int id, Shared_data& shared);
 
 protected:
 	class Child_destructor_thread : Genode::Thread<2*4096>

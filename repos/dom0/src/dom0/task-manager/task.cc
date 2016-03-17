@@ -38,7 +38,7 @@ void Task::Child_policy::exit(int exit_value)
 			type = Event::EXIT_ERROR;
 	}
 
-	Task::log_profile_data(type, _task->_name, _task->_shared);
+	Task::log_profile_data(type, _task->_desc.id, _task->_shared);
 
 	Task::_child_destructor.submit_for_destruction(_task);
 }
@@ -122,7 +122,7 @@ void Task::Child_policy::unregister_services()
 
 Task::Meta::Meta(const Task& task) :
 	ram{},
-	// Scale priority.
+	// Scale priority. Google Harmonic priority-range subdivision.
 	cpu{task.name().c_str(), (long int)task._desc.priority * Genode::config()->xml_node().attribute_value<long int>("prio_levels", 0)},
 	rm{},
 	pd{},
@@ -257,7 +257,7 @@ Task* Task::task_by_name(std::list<Task>& tasks, const std::string& name)
 	return nullptr;
 }
 
-void Task::log_profile_data(Event::Type type, const std::string& task_name, Shared_data& shared)
+void Task::log_profile_data(Event::Type type, int task_id, Shared_data& shared)
 {
 	static const size_t MAX_NUM_SUBJECTS = 128;
 	// Lock to avoid race conditions as this may be called by the child's thread.
@@ -271,7 +271,7 @@ void Task::log_profile_data(Event::Type type, const std::string& task_name, Shar
 	Event& event = shared.event_log.back();
 
 	event.type = type;
-	event.task_name = task_name;
+	event.task_id = task_id;
 	event.time_stamp = shared.timer.elapsed_ms();
 
 	Event::Task_info* task_manager_info = nullptr;
@@ -302,6 +302,7 @@ void Task::log_profile_data(Event::Type type, const std::string& task_name, Shar
 		if (task && task->running())
 		{
 			task_info.managed = true;
+			task_info.managed_info.id = task->_desc.id;
 			task_info.managed_info.quota = task->_meta->ram.quota();
 			task_info.managed_info.used = task->_meta->ram.used();
 			task_info.managed_info.iteration = task->_iteration;
@@ -310,6 +311,7 @@ void Task::log_profile_data(Event::Type type, const std::string& task_name, Shar
 		else if (task_info.session.rfind("task-manager") == task_info.session.length() - 12 && task_info.thread == "task-manager")
 		{
 			task_info.managed = true;
+			task_info.managed_info.id = 0;
 			task_info.managed_info.quota = Genode::env()->ram_session()->quota();
 			task_info.managed_info.used = Genode::env()->ram_session()->used();
 			task_info.managed_info.iteration = 0;
@@ -393,7 +395,7 @@ void Task::_start(unsigned)
 		PWRN("Failed to create child - unknown reason");
 	}
 
-	log_profile_data(Event::START, _name, _shared);
+	log_profile_data(Event::START, _desc.id, _shared);
 }
 
 Task::Child_destructor_thread::Child_destructor_thread() :

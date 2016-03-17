@@ -60,12 +60,13 @@ int main(int argc, char*argv[]) {
             int ct = et;
             int period = rand() % 4000 + 3000;
             int offset = 0;
-            int prio = rand() % 3 + 1;
+            // higher number = lower priority
+            int prio = rand() % 4 + 1;
 
             if (taskNo == 1)
             {
                 period = 0;
-                prio = 0;
+                prio = 4;
                 et = 0;
                 ct = 0;
             }

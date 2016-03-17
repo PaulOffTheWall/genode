@@ -12,6 +12,7 @@ Task_manager_session_component::Task_manager_session_component(Server::Entrypoin
 	_ep{ep},
 	_shared{_trace_quota(), _trace_buf_size()},
 	_cap{},
+	_quota{Genode::env()->ram_session()->quota()},
 	_profile_data{Genode::env()->ram_session(), _profile_ds_size()}
 {
 	// Load dynamic linker for dynamically linked binaries.
@@ -90,7 +91,7 @@ void Task_manager_session_component::stop()
 
 Genode::Ram_dataspace_capability Task_manager_session_component::profile_data()
 {
-	Task::log_profile_data(Task::Event::EXTERNAL, "", _shared);
+	Task::log_profile_data(Task::Event::EXTERNAL, -1, _shared);
 
 	Genode::Lock::Guard guard(_shared.log_lock);
 	// Xml_generator directly writes XML data into the buffer on construction, explaining the heavy recursion here.
@@ -99,6 +100,17 @@ Genode::Ram_dataspace_capability Task_manager_session_component::profile_data()
 	{
 		xml.node("task-descriptions", [&]()
 		{
+			xml.node("task", [&]()
+			{
+				xml.attribute("id", "0");
+				xml.attribute("execution-time", "0");
+				xml.attribute("critical-time", "0");
+				xml.attribute("priority", "0");
+				xml.attribute("period", "0");
+				xml.attribute("offset", "0");
+				xml.attribute("quota", std::to_string(_quota).c_str());
+				xml.attribute("binary", "task-manager");
+			});
 			for (const Task& task : _shared.tasks)
 			{
 				xml.node("task", [&]()
@@ -122,7 +134,7 @@ Genode::Ram_dataspace_capability Task_manager_session_component::profile_data()
 				xml.node("event", [&]()
 				{
 					xml.attribute("type", Task::Event::type_name(event.type));
-					xml.attribute("task", event.task_name.c_str());
+					xml.attribute("task-id", std::to_string(event.task_id).c_str());
 					xml.attribute("time-stamp", std::to_string(event.time_stamp).c_str());
 
 					for (const Task::Event::Task_info& task_info : event.task_infos)
@@ -140,6 +152,7 @@ Genode::Ram_dataspace_capability Task_manager_session_component::profile_data()
 							{
 								xml.node("managed-task", [&]()
 								{
+									xml.attribute("id", std::to_string(task_info.managed_info.id).c_str());
 									xml.attribute("quota", std::to_string(task_info.managed_info.quota).c_str());
 									xml.attribute("used", std::to_string(task_info.managed_info.used).c_str());
 									xml.attribute("iteration", std::to_string(task_info.managed_info.iteration).c_str());

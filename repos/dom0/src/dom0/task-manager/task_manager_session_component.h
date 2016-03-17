@@ -42,7 +42,7 @@ protected:
 	Task::Shared_data _shared;
 	Genode::Cap_connection _cap;
 
-	Timer::Connection _timer;
+	size_t _quota;
 
 	Genode::Attached_ram_dataspace _profile_data;
 
