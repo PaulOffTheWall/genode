@@ -19,7 +19,7 @@ tms:
 	@cd tms-sim-2014-12/build && ../build-local.sh .. && $(MAKE) && $(MAKE) install
 
 descs:
-	@tms-sim-2014-12/build/bin/generator -o dom0-client/tasks.xml -n 3
+	@tms-sim-2014-12/build/bin/generator -o dom0_client/tasks.xml -n 3
 #
 # ================================================================
 
@@ -60,19 +60,19 @@ tasks: hey idle namaste tumatmul
 
 hey:
 	$(MAKE) -j10 -C $(GENODE_BUILD_DIR) dom0/hey
-	cp $(GENODE_BUILD_DIR)/dom0/hey/hey dom0-client/
+	cp $(GENODE_BUILD_DIR)/dom0/hey/hey dom0_client/
 
 idle:
 	$(MAKE) -j10 -C $(GENODE_BUILD_DIR) dom0/idle
-	cp $(GENODE_BUILD_DIR)/dom0/idle/idle dom0-client/
+	cp $(GENODE_BUILD_DIR)/dom0/idle/idle dom0_client/
 
 namaste:
 	$(MAKE) -j10 -C $(GENODE_BUILD_DIR) dom0/namaste
-	cp $(GENODE_BUILD_DIR)/dom0/namaste/namaste dom0-client/
+	cp $(GENODE_BUILD_DIR)/dom0/namaste/namaste dom0_client/
 
 tumatmul:
 	$(MAKE) -j10 -C $(GENODE_BUILD_DIR) dom0/tumatmul
-	cp $(GENODE_BUILD_DIR)/dom0/tumatmul/tumatmul dom0-client/
+	cp $(GENODE_BUILD_DIR)/dom0/tumatmul/tumatmul dom0_client/
 
 dom0:
 	$(MAKE) -j10 -C $(GENODE_BUILD_DIR) dom0/server
