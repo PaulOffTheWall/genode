@@ -149,7 +149,7 @@ namespace tmssim {
     {
       quota = "8M";
     }
-    if (_period == 0 && getPriority() == 4)
+    if (_period == 0)
     {
       pkg = "idle";
     }

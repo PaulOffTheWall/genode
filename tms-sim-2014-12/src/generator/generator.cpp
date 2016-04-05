@@ -61,15 +61,21 @@ int main(int argc, char*argv[]) {
             int period = rand() % 4000 + 3000;
             int offset = 0;
             // higher number = lower priority
-            int prio = rand() % 4 + 1;
+            int prioLevels = 8;
+            int prio = rand() % (prioLevels - 1);
 
             if (taskNo == 1)
             {
                 period = 0;
-                prio = 4;
+                prio = 7;
                 et = 0;
                 ct = 0;
             }
+
+            // scale priority to available Genode priority space
+            int maxPrio = 1 << 16;
+            prio *= maxPrio / prioLevels;
+
 
             PeriodicLoadTask::GenodeConfig config;
             config.arg1 = rand() % 50000 + 100000;

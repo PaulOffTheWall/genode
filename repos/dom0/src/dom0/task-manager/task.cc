@@ -122,8 +122,7 @@ void Task::Child_policy::unregister_services()
 
 Task::Meta::Meta(const Task& task) :
 	ram{},
-	// Scale priority. Google Harmonic priority-range subdivision.
-	cpu{task.name().c_str(), (long int)task._desc.priority * Genode::config()->xml_node().attribute_value<long int>("prio_levels", 0)},
+	cpu{task.name().c_str(), (long int)task._desc.priority},
 	rm{},
 	pd{},
 	server{ram}
