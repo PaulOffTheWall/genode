@@ -46,7 +46,6 @@ protected:
 
 	Genode::Attached_ram_dataspace _profile_data;
 
-	static Genode::Number_of_bytes _launchpad_quota();
 	static Genode::Number_of_bytes _trace_quota();
 	static Genode::Number_of_bytes _trace_buf_size();
 	static Genode::Number_of_bytes _profile_ds_size();

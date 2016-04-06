@@ -170,12 +170,6 @@ Genode::Ram_dataspace_capability Task_manager_session_component::profile_data()
 	return _profile_data.cap();
 }
 
-Genode::Number_of_bytes Task_manager_session_component::_launchpad_quota()
-{
-	Genode::Xml_node launchpad_node = Genode::config()->xml_node().sub_node("launchpad");
-	return launchpad_node.attribute_value<Genode::Number_of_bytes>("quota", 10 * 1024 * 1024);
-}
-
 Genode::Number_of_bytes Task_manager_session_component::_trace_quota()
 {
 	Genode::Xml_node launchpad_node = Genode::config()->xml_node().sub_node("trace");
