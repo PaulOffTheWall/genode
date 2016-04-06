@@ -43,6 +43,7 @@ public:
 		Init::Child_policy_enforce_labeling _labeling_policy;
 		Init::Child_policy_provide_rom_file _config_policy;
 		Init::Child_policy_provide_rom_file _binary_policy;
+		Genode::Lock _exit_lock;
 		bool _active;
 	};
 

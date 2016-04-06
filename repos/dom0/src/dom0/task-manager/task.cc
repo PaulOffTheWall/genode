@@ -17,6 +17,7 @@ Task::Child_policy::Child_policy(Task& task) :
 
 void Task::Child_policy::exit(int exit_value)
 {
+	Genode::Lock::Guard guard(_exit_lock);
 	// Already exited, waiting for destruction.
 	if (!_active)
 	{
