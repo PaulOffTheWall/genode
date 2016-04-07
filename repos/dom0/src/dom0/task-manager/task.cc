@@ -201,7 +201,6 @@ Task::Task(Server::Entrypoint& ep, Genode::Cap_connection& cap, Shared_data& sha
 
 Task::~Task()
 {
-	stop();
 }
 
 void Task::run()

@@ -54,6 +54,10 @@ void Task_manager_session_component::add_tasks(Genode::Ram_dataspace_capability 
 void Task_manager_session_component::clear_tasks()
 {
 	PDBG("Clearing %d task%s. Binaries still held.", _shared.tasks.size(), _shared.tasks.size() == 1 ? "" : "s");
+	stop();
+
+	// Wait for task destruction.
+	_shared.timer.msleep(500);
 	_shared.tasks.clear();
 }
 

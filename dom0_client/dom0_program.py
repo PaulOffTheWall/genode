@@ -5,8 +5,11 @@ from dom0_sql import *
 import time
 
 session = Dom0_session('192.168.0.14', 3001, script_dir + 'tasks.xml')
-session.start_ex()
+session.send_descs()
+session.send_bins()
+session.start()
 
+print('Waiting for 10 seconds...')
 time.sleep(10)
 
 session.stop()

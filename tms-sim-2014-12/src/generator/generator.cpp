@@ -56,13 +56,13 @@ int main(int argc, char*argv[]) {
 
         // Periodic Tasks
         for(int taskNo=1; taskNo<=num; taskNo++) {
-            int et = rand() % 5000 + 1000;
-            int ct = et;
             int period = rand() % 4000 + 3000;
             int offset = 0;
             // higher number = lower priority
             int prioLevels = 8;
             int prio = rand() % (prioLevels - 1);
+            int et = rand() % (period - 500);
+            int ct = et;
 
             if (taskNo == 1)
             {

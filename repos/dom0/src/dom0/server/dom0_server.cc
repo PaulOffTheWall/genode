@@ -170,7 +170,6 @@ void Dom0_server::serve()
 			PWRN("Unknown message: %d", message);
 		}
 	}
-	_task_manager.stop();
 	_task_manager.clear_tasks();
 }
 
