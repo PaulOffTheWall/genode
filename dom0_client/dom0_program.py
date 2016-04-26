@@ -4,7 +4,8 @@ from dom0_client import *
 from dom0_sql import *
 import time
 
-session = Dom0_session('192.168.0.14', 3001, script_dir + 'tasks.xml')
+session = Dom0_session('192.168.0.14', 3001)
+session.read_tasks(script_dir + 'tasks.xml')
 session.send_descs()
 session.send_bins()
 session.start()

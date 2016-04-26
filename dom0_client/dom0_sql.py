@@ -84,7 +84,7 @@ def xml2sql(xml_file=script_dir+'log.xml', sql_file=script_dir+'dom0.db'):
 	for event in events:
 		for task in event:
 			a = task.attrib
-			if a['managed'] == 'yes':
+			if a['managed'] == 'yes' and a['state'] != 'DEAD':
 				am = task.find('managed-task').attrib
 				snapshot_inserts.append((am['id'], i, a['execution-time'], am['quota'], am['used'], am['iteration']))
 		i += 1

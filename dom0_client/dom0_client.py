@@ -9,10 +9,9 @@ script_dir = os.path.dirname(os.path.realpath(__file__)) + '/'
 
 class Dom0_session:
 	"""Manager for a connection to the dom0 server."""
-	def __init__(self, host='192.168.0.14', port=3001, tasks_file=script_dir+'tasks.xml'):
-		"""Initialize connection and parse task descriptions."""
+	def __init__(self, host='192.168.0.14', port=3001):
+		"""Initialize connection."""
 		self.connect(host, port)
-		self.read_tasks(tasks_file)
 
 	def connect(self, host='192.168.0.14', port=3001):
 		"""Connect to the Genode dom0 server."""
